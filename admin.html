@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<!--
+  ADMIN KKMP JELUPANG
+  Panel untuk mengelola produk, mitra, pengumuman, dan dokumentasi (data di Supabase).
+  Buka lewat  alamat-website/admin.html  lalu masuk dengan akun admin.
+  Pengaturan alamat dan kunci Supabase ada di config.js.
+  Halaman ini tidak ditautkan dari website dan diberi tanda noindex.
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin KKMP Jelupang</title>
+  <meta name="color-scheme" content="light dark">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --red: #B84435;
+      --mar: #632B2B;
+      --yel: #F6EB60;
+      --ink: #272227;
+      --mut: #6d6368;
+      --line: #e6dfd8;
+      --bg: #FFF9F0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: Poppins, "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    /* ----- Tombol ----- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--red);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    .btn.danger { background: #fff; color: #b3261e; border: 1px solid #e8b9b5; }
+    .btn.sm { padding: 5px 10px; font-size: 12.5px; border-radius: 8px; }
+
+    /* ----- Login ----- */
+    .login {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+    .box {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(99, 43, 43, .08);
+    }
+    .box h1 { font-size: 20px; color: var(--mar); margin-bottom: 4px; }
+    .box p.sub { color: var(--mut); margin-bottom: 18px; font-size: 13px; }
+    .box .btn { width: 100%; justify-content: center; margin-top: 6px; }
+
+    .fld { margin-bottom: 12px; }
+    .fld label { display: block; font-weight: 600; font-size: 12.5px; margin-bottom: 4px; }
+    .fld small { display: block; color: var(--mut); font-size: 11.5px; margin-top: 3px; }
+    .fld input[type=text],
+    .fld input[type=email],
+    .fld input[type=password],
+    .fld input[type=number],
+    .fld input[type=date],
+    .fld textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #d9d0c8;
+      border-radius: 9px;
+      background: #fff;
+    }
+    .fld textarea { min-height: 84px; resize: vertical; }
+    .fld input:focus, .fld textarea:focus { outline: 2px solid rgba(184, 68, 53, .35); border-color: var(--red); }
+    .fld .chk { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+
+    .msg { padding: 9px 12px; border-radius: 9px; font-size: 13px; margin-bottom: 12px; }
+    .msg.err { background: #fdecea; color: #8a1c14; border: 1px solid #f3c1bc; }
+    .msg.warn { background: #fff6d8; color: #6b5200; border: 1px solid #efdf9a; }
+
+    /* ----- Aplikasi ----- */
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      background: var(--mar);
+      color: #fff;
+    }
+    .top b { font-size: 15px; }
+    .top .who { margin-left: auto; font-size: 12.5px; opacity: .85; }
+    .top .btn.ghost { padding: 6px 12px; }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 18px 20px 60px; }
+
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab {
+      padding: 8px 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 600;
+    }
+    .tab.on { background: var(--red); border-color: var(--red); color: #fff; }
+
+    .bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .bar .count { color: var(--mut); font-size: 13px; margin-right: auto; }
+    .bar input {
+      padding: 8px 11px;
+      border: 1px solid #d9d0c8;
+      border-radius: 9px;
+      min-width: 200px;
+    }
+
+    .tbl-wrap {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { background: #faf4ee; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--mut); }
+    tr:last-child td { border-bottom: 0; }
+    td.thumb { width: 64px; }
+    td.thumb .im {
+      width: 52px;
+      height: 40px;
+      border-radius: 8px;
+      background: #e6e0da;
+      overflow: hidden;
+    }
+    td.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    td .t1 { font-weight: 600; }
+    td .t2 { color: var(--mut); font-size: 12.5px; }
+    td.act { white-space: nowrap; text-align: right; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+    .pill.on { background: #e3f3e6; color: #1f6b2e; }
+    .pill.off { background: #eee; color: #777; }
+    .empty { padding: 34px; text-align: center; color: var(--mut); }
+
+    /* ----- Modal form ----- */
+    .ov {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(30, 15, 15, .55);
+      overflow-y: auto;
+    }
+    .mod {
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+    }
+    .mod h2 { font-size: 18px; color: var(--mar); margin-bottom: 14px; }
+    .mod .foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    .imgf .pv {
+      width: 100%;
+      height: 150px;
+      border-radius: 10px;
+      background: #e6e0da;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .imgf .pv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .imgf .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .imgf .st { font-size: 12px; color: var(--mut); }
+
+    /* ----- Editor teks & pengaturan ----- */
+    .mod.wide { max-width: 780px; }
+    .obj { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 4px; margin-bottom: 14px; }
+    .obj > legend { padding: 0 8px; font-weight: 700; color: var(--mar); }
+    .tup { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+    .tup:has(> :nth-child(3)) { grid-template-columns: 90px 1fr 2fr; }
+    .lst > label { font-size: 13px; color: var(--mar); }
+    .li { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 2px; margin-bottom: 10px; background: #fcf9f5; }
+    .li.act { border-color: var(--red); box-shadow: 0 0 0 2px rgba(184, 68, 53, .2); }
+    .lh { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .lh span { display: flex; gap: 4px; flex-wrap: wrap; }
+    .fld select { width: 100%; padding: 9px 11px; border: 1px solid #d9d0c8; border-radius: 9px; background: #fff; }
+    .pinmap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.7;
+      margin: 6px 0;
+      border-radius: 12px;
+      background: #e9e4de linear-gradient(rgba(0,0,0,.06) 1px, transparent 1px) 0 0 / 100% 10%, linear-gradient(90deg, rgba(0,0,0,.06) 1px, transparent 1px) 0 0 / 10% 100%;
+      cursor: crosshair;
+      overflow: hidden;
+    }
+    .dot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,.35);
+      cursor: pointer;
+    }
+    .dot.k-toko { background: var(--mar); }
+    .dot.k-apotek { background: #3f8f7a; }
+    .dot.k-kkmp { background: var(--yel); color: var(--mar); border-color: var(--mar); }
+    .dot.act { outline: 3px solid var(--ink); z-index: 2; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 30;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 13px;
+    }
+    .toast.err { background: #b3261e; }
+
+    /* ===== Tambahan v2 ===== */
+    .tab i { font-style: normal; font-size: 11px; background: rgba(0,0,0,.08); border-radius: 999px; padding: 0 7px; margin-left: 4px; }
+    .tab.on i { background: rgba(255,255,255,.28); }
+    .bar select { padding: 8px 10px; border: 1px solid #d9d0c8; border-radius: 9px; background: #fff; }
+    .bulk { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 12px; border-radius: 12px; background: var(--mar); color: #fff; position: sticky; top: 58px; z-index: 4; }
+    .bulk b { margin-right: auto; }
+    .bulk .btn.ghost { padding: 5px 10px; font-size: 12.5px; }
+    input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--red); cursor: pointer; }
+    tr.picked td { background: #fff4ee; }
+    td.ck, th.ck { width: 36px; padding-right: 0; }
+    .sw { width: 38px; height: 22px; border-radius: 999px; border: 0; background: #cfc7c0; position: relative; transition: background .15s; flex: none; }
+    .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .sw.on { background: #2f9e4f; }
+    .sw.on::after { transform: translateX(16px); }
+    tbody tr:hover td { background: #fffaf4; }
+    td .ib { padding: 5px 9px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; padding: 12px; }
+    .gc { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+    .gc.off { opacity: .62; }
+    .gc.picked { outline: 2px solid var(--red); }
+    .gi { position: relative; height: 120px; background: #e6e0da; }
+    .gi img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gk { position: absolute; top: 8px; left: 8px; background: #fff; border-radius: 6px; padding: 3px 4px 0; }
+    .gb { padding: 10px 12px; }
+    .ga { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .ga .sw { margin-right: auto; }
+    .pv.drag { outline: 3px dashed var(--red); }
+    .pv:empty { display: grid; place-items: center; color: var(--mut); font-size: 12px; }
+    .pv:empty::before { content: "Seret & lepas gambar di sini"; }
+    /* dashboard */
+    .hello { margin-bottom: 14px; }
+    .hello h2 { font-size: 20px; color: var(--mar); }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .stat, .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    .stat .sh { display: flex; justify-content: space-between; align-items: center; }
+    .stat .sn { font-size: 34px; font-weight: 700; color: var(--red); line-height: 1.2; }
+    .lnk { background: none; border: 0; color: var(--red); font-weight: 600; padding: 6px 0 0; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .card h3 { font-size: 14px; color: var(--mar); margin-bottom: 10px; }
+    .it { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 2px; }
+    .it:last-child { border-bottom: 0; }
+    .it:hover { background: #fffaf4; }
+    .it .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ok { color: #1f6b2e; font-weight: 600; }
+    .brow { display: grid; grid-template-columns: 130px 1fr 28px; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 6px; }
+    .brow .tr, .prog { height: 10px; border-radius: 999px; background: #eee6df; overflow: hidden; }
+    .brow .tr i, .prog i { display: block; height: 100%; background: var(--red); border-radius: 999px; }
+    .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); }
+    .sbar input[type=search] { flex: 1; min-width: 180px; padding: 8px 11px; border: 1px solid #d9d0c8; border-radius: 9px; }
+    .toast { display: flex; align-items: center; gap: 12px; }
+    .toast button { background: var(--yel); color: var(--mar); border: 0; border-radius: 999px; padding: 3px 12px; font-weight: 700; }
+    @media (max-width: 640px) { .wrap { padding: 12px 12px 60px; } .bar input, .bar select { flex: 1 1 100%; } .brow { grid-template-columns: 90px 1fr 24px; } }
+
+    /* ===== v3: tata letak sidebar, responsif, gelap, palet perintah, pratinjau ===== */
+    .wrap { max-width: 1320px; display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .main { min-width: 0; }
+    #tabs { position: sticky; top: 72px; flex-direction: column; flex-wrap: nowrap; gap: 4px; margin: 0; }
+    #tabs .tab { display: flex; justify-content: space-between; align-items: center; border-radius: 10px; text-align: left; transition: background .15s, transform .15s; }
+    #tabs .tab:not(.on):hover { background: #fff4ee; transform: translateX(2px); }
+    .top .btn.ghost { color: var(--ink); }
+    .kbd { font-size: 11px; opacity: .6; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; margin-left: 4px; }
+    .mod .foot { position: sticky; bottom: -22px; background: inherit; padding: 12px 0 2px; border-top: 1px solid var(--line); }
+    .obj > legend { cursor: pointer; user-select: none; }
+    .obj > legend::before { content: "▾ "; color: var(--mut); }
+    .obj.cl > legend::before { content: "▸ "; }
+    .obj.cl > :not(legend) { display: none; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12.5px; font-weight: 600; }
+    .chip.on { background: var(--mar); border-color: var(--mar); color: #fff; }
+    /* palet perintah */
+    .pal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: start center; padding: 12vh 14px 0; background: rgba(30,15,15,.55); }
+    .pal > div { width: 100%; max-width: 560px; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+    .pal input { width: 100%; border: 0; border-bottom: 1px solid var(--line); padding: 15px 18px; font-size: 15px; outline: 0; background: transparent; color: var(--ink); }
+    .pal ul { list-style: none; max-height: 52vh; overflow-y: auto; }
+    .pal li button { display: flex; width: 100%; justify-content: space-between; gap: 12px; padding: 10px 18px; border: 0; background: none; text-align: left; color: var(--ink); }
+    .pal li button small { color: var(--mut); }
+    .pal li.on button { background: var(--red); color: #fff; }
+    .pal li.on button small { color: #fff; opacity: .8; }
+    .pal .none { padding: 18px; color: var(--mut); text-align: center; }
+    /* pratinjau */
+    .pvw { position: fixed; inset: 0; z-index: 35; display: flex; flex-direction: column; background: #2a2224; }
+    .pvw .pb { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: var(--mar); color: #fff; }
+    .pvw .pb b { margin-right: auto; }
+    .pvw .btn.ghost.on { background: var(--yel); color: var(--mar); border-color: var(--yel); }
+    .pvw .fr { flex: 1; display: grid; justify-items: center; padding: 12px; overflow: auto; }
+    .pvw iframe { width: 100%; max-width: 100%; height: 100%; border: 0; border-radius: 12px; background: #fff; transition: width .25s; }
+    /* gelap */
+    html.dark { --bg: #1b1617; --ink: #f1e9e6; --mut: #b3a5a3; --line: #3b3033; --mar: #f0b7ac; color-scheme: dark; }
+    html.dark .box, html.dark .stat, html.dark .card, html.dark .tbl-wrap, html.dark .mod, html.dark .tab, html.dark .gc, html.dark .pal > div, html.dark .chip, html.dark .btn.ghost, html.dark .btn.danger { background: #261f21; color: var(--ink); }
+    html.dark .top, html.dark .bulk, html.dark .pvw .pb, html.dark .chip.on { background: #4a2323; color: #fff; }
+    html.dark .tab.on { background: var(--red); color: #fff; }
+    html.dark th, html.dark .li { background: #2d2325; }
+    html.dark .fld input, html.dark .fld textarea, html.dark .fld select, html.dark .bar input, html.dark .bar select, html.dark .sbar input { background: #1f1819; color: var(--ink); border-color: var(--line); }
+    html.dark tbody tr:hover td, html.dark .it:hover, html.dark #tabs .tab:not(.on):hover { background: #33282a; }
+    html.dark tr.picked td { background: #3a2626; }
+    html.dark .pill.off { background: #3b3033; color: #bbb; }
+    html.dark .msg.warn { background: #3a3317; color: #f3e08a; border-color: #5a4f1f; }
+    @media (max-width: 860px) {
+      .wrap { display: block; }
+      #tabs { top: 52px; z-index: 4; flex-direction: row; overflow-x: auto; padding: 8px 0; margin-bottom: 8px; background: var(--bg); scrollbar-width: none; }
+      #tabs .tab { white-space: nowrap; flex: none; gap: 6px; }
+      .top .kbd { display: none; }
+    }
+    @media (max-width: 640px) {
+      .top { padding: 10px 12px; gap: 8px; }
+      .top b { font-size: 14px; }
+      .top .who { display: none; }
+      .tbl-wrap table { min-width: 0; }
+      .tbl-wrap thead { display: none; }
+      .tbl-wrap table, .tbl-wrap tbody { display: block; }
+      .tbl-wrap tr { display: grid; grid-template-columns: 28px 52px minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+      .tbl-wrap td { display: block; padding: 0; border: 0; }
+      .tbl-wrap td.act { grid-column: 1 / -1; text-align: left; }
+      .ov { padding: 0; place-items: end stretch; }
+      .mod, .mod.wide { max-width: none; border-radius: 18px 18px 0 0; max-height: 94vh; padding: 18px 16px; }
+      .mod .foot { bottom: -18px; }
+      .tup, .tup:has(> :nth-child(3)) { grid-template-columns: 1fr; }
+      .pal { padding-top: 6vh; }
+      .toast { max-width: calc(100vw - 24px); border-radius: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+
+<body>
+  <!-- ===== Masuk ===== -->
+  <div class="login" id="login" hidden>
+    <form class="box" id="lform" autocomplete="on">
+      <h1>Admin KKMP Jelupang</h1>
+      <p class="sub">Masuk untuk mengelola produk, mitra, pengumuman, dan dokumentasi.</p>
+      <div class="msg warn" id="cfgwarn" hidden>
+        <b>config.js belum diisi.</b> Isi alamat dan kunci Supabase terlebih dahulu (lihat PANDUAN.md).
+      </div>
+      <div class="msg err" id="lerr" hidden></div>
+      <div class="fld">
+        <label for="em">Email</label>
+        <input type="email" id="em" required autocomplete="username">
+      </div>
+      <div class="fld">
+        <label for="pw">Kata sandi</label>
+        <input type="password" id="pw" required autocomplete="current-password">
+      </div>
+      <button class="btn" id="lbtn" type="submit">Masuk</button>
+    </form>
+  </div>
+
+  <!-- ===== Panel ===== -->
+  <div id="panel" hidden>
+    <div class="top">
+      <b>Admin KKMP Jelupang</b>
+      <a class="btn ghost sm" href="index.html" target="_blank" rel="noopener">Lihat website ➜</a>
+      <button class="btn ghost sm" id="palbtn" type="button" title="Cari perintah (Ctrl+K)">🔍 Cari <span class="kbd">Ctrl K</span></button>
+      <button class="btn ghost sm" id="pvbtn" type="button">👁 Pratinjau</button>
+      <button class="btn ghost sm" id="thbtn" type="button" title="Ganti tema" aria-label="Ganti tema">🌓</button>
+      <span class="who" id="who"></span>
+      <button class="btn ghost sm" id="reload" type="button" title="Muat ulang data">↻</button>
+      <button class="btn ghost sm" id="logout" type="button">Keluar</button>
+    </div>
+
+    <div class="wrap">
+      <div class="tabs" id="tabs"></div>
+      <div class="main">
+      <div id="dash" hidden></div>
+      <div class="bar" id="bar" hidden>
+        <span class="count" id="count"></span>
+        <input type="search" id="q" placeholder="Cari…  (tekan /)" aria-label="Cari">
+        <select id="fst" aria-label="Status"><option value="">Semua status</option><option value="1">Tampil</option><option value="0">Disembunyikan</option></select>
+        <select id="fcat" aria-label="Kategori"></select>
+        <select id="fsort" aria-label="Urutkan"></select>
+        <button class="btn ghost" id="vw" type="button"></button>
+        <button class="btn ghost" id="exp" type="button" title="Unduh daftar sebagai CSV">⬇ CSV</button>
+        <button class="btn" id="add" type="button">+ Tambah</button>
+      </div>
+      <div class="bulk" id="bulk" hidden>
+        <b id="bn"></b>
+        <button class="btn ghost" type="button" data-b="show">Tampilkan</button>
+        <button class="btn ghost" type="button" data-b="hide">Sembunyikan</button>
+        <button class="btn ghost" type="button" data-b="del">Hapus</button>
+        <button class="btn ghost" type="button" data-b="clr">Batal pilih</button>
+      </div>
+      <div class="tbl-wrap" id="tw"><div id="list"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="ov" hidden>
+    <form class="mod" id="form"></form>
+  </div>
+
+  <div class="ov" id="dov" hidden>
+    <form class="mod wide" id="dform"></form>
+  </div>
+
+  <datalist id="dl_pages">
+    <option value="beranda"><option value="profil"><option value="katalog"><option value="kemitraan"><option value="kontak">
+  </datalist>
+
+  <div class="pal" id="pal" hidden><div>
+    <input id="pin" type="text" placeholder="Ketik untuk mencari halaman, data, atau aksi…" autocomplete="off" aria-label="Cari perintah">
+    <ul id="pls"></ul></div></div>
+
+  <div class="pvw" id="pvw" hidden>
+    <div class="pb"><b>Pratinjau website</b>
+      <button class="btn ghost sm on" type="button" data-w="100%">🖥 Desktop</button>
+      <button class="btn ghost sm" type="button" data-w="820px">📱 Tablet</button>
+      <button class="btn ghost sm" type="button" data-w="390px">📱 Ponsel</button>
+      <button class="btn ghost sm" type="button" id="pvr">↻ Muat ulang</button>
+      <a class="btn ghost sm" href="index.html" target="_blank" rel="noopener">Buka tab baru ➜</a>
+      <button class="btn ghost sm" type="button" id="pvx">Tutup ✕</button></div>
+    <div class="fr"><iframe id="pvf" title="Pratinjau website"></iframe></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="config.js"></script>
+  <script>
+    // ==================================================================
+    // Konfigurasi
+    // ==================================================================
+    const CFG = window.KKMP_CONFIG || {};
+    const BASE = String(CFG.SUPABASE_URL || "").replace(/\/+$/, "");
+    const KEY = CFG.SUPABASE_ANON_KEY || "";
+    const BUCKET = "kkmp-images";
+    const SKEY = "kkmp_admin_session";
+
+    const $ = (s) => document.querySelector(s);
+    const esc = (t) =>
+      String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const fmtDate = (v) => {
+      const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${+m[3]} ${BULAN[+m[2] - 1]} ${m[1]}` : "";
+    };
+
+    // Definisi tiap tabel: kolom daftar + isian formulir
+    const TABLES = {
+      products: {
+        label: "Produk",
+        single: "produk",
+        order: "sort_order.asc,name.asc",
+        title: (r) => r.name,
+        sub: (r) => [r.category, r.unit].filter(Boolean).join(" · "),
+        search: (r) => [r.name, r.category, r.description].join(" "),
+        cats: ["Sembako", "Bahan Makanan", "Rumah Tangga", "Kesehatan", "Minuman & Makanan Ringan", "Lainnya"],
+        catField: "category",
+        fields: [
+          { k: "name", label: "Nama produk", type: "text", required: true },
+          { k: "category", label: "Kategori", type: "text", required: true, list: true, def: "Sembako" },
+          { k: "unit", label: "Satuan", type: "text", ph: "per kg, per liter, per pcs…" },
+          { k: "description", label: "Deskripsi singkat", type: "textarea" },
+          { k: "image_url", label: "Foto produk", type: "image" },
+          { k: "sort_order", label: "Urutan tampil", type: "number", def: 0, help: "Angka kecil tampil lebih dulu." },
+          { k: "is_active", label: "Tampilkan di website", type: "checkbox", def: true }
+        ]
+      },
+      partners: {
+        label: "Mitra",
+        single: "mitra",
+        order: "sort_order.asc,name.asc",
+        title: (r) => r.name,
+        sub: (r) => [r.category, r.address].filter(Boolean).join(" · "),
+        search: (r) => [r.name, r.category, r.address].join(" "),
+        cats: ["Sembako & Waserda", "Apotek", "Offtaker (Hasil Produksi Warga)", "Gudang & Cold Storage", "Simpan Pinjam", "Klinik", "Logistik & Distribusi", "Lainnya"],
+        catField: "category",
+        fields: [
+          { k: "name", label: "Nama usaha", type: "text", required: true },
+          { k: "category", label: "Kategori", type: "text", required: true, list: true, def: "Sembako & Waserda" },
+          { k: "address", label: "Alamat", type: "textarea" },
+          { k: "image_url", label: "Foto usaha", type: "image" },
+          { k: "sort_order", label: "Urutan tampil", type: "number", def: 0, help: "Angka kecil tampil lebih dulu." },
+          { k: "is_active", label: "Tampilkan di website (setelah mitra menyetujui publikasi)", type: "checkbox", def: true }
+        ]
+      },
+      posts: {
+        label: "Pengumuman",
+        single: "pengumuman",
+        order: "published_at.desc,id.desc",
+        title: (r) => r.title,
+        sub: (r) => [r.tag, fmtDate(r.published_at)].filter(Boolean).join(" · "),
+        search: (r) => [r.title, r.tag, r.text].join(" "),
+        cats: ["Pengumuman", "Kegiatan", "Informasi"],
+        catField: "tag",
+        fields: [
+          { k: "title", label: "Judul", type: "text", required: true },
+          { k: "tag", label: "Label", type: "text", list: true, def: "Pengumuman" },
+          { k: "text", label: "Isi ringkas", type: "textarea" },
+          { k: "published_at", label: "Tanggal terbit", type: "date", def: "today", required: true },
+          { k: "link", label: "Tautan (opsional)", type: "text", ph: "katalog, kontak, atau https://…", help: "Nama halaman (beranda, profil, katalog, kemitraan, kontak) atau alamat https://. Kosong = tanpa tautan." },
+          { k: "image_url", label: "Gambar", type: "image" },
+          { k: "is_active", label: "Tampilkan di website", type: "checkbox", def: true }
+        ]
+      },
+      gallery: {
+        label: "Dokumentasi",
+        single: "dokumentasi",
+        order: "event_date.desc,id.desc",
+        title: (r) => r.title,
+        sub: (r) => fmtDate(r.event_date),
+        search: (r) => r.title,
+        cats: [],
+        fields: [
+          { k: "title", label: "Judul kegiatan", type: "text", required: true },
+          { k: "event_date", label: "Tanggal kegiatan", type: "date", def: "today", required: true },
+          { k: "image_url", label: "Foto kegiatan", type: "image" },
+          { k: "is_active", label: "Tampilkan di website", type: "checkbox", def: true }
+        ]
+      }
+    };
+
+    // ==================================================================
+    // Sesi & API
+    // ==================================================================
+    let session = null;
+    let cur = "dash";
+    let rows = [];
+    let editing = null; // { id|null }
+
+    const readSession = () => {
+      try { return JSON.parse(localStorage.getItem(SKEY) || localStorage.getItem("kkmp_session")); } catch (e) { return null; }
+    };
+    const writeSession = (s) => {
+      session = s;
+      try { s ? localStorage.setItem(SKEY, JSON.stringify(s)) : (localStorage.removeItem(SKEY), localStorage.removeItem("kkmp_session")); } catch (e) {}
+    };
+    const toSession = (d) => ({
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600),
+      email: (d.user && d.user.email) || (session && session.email) || ""
+    });
+
+    async function errMsg(res) {
+      try {
+        const j = await res.json();
+        return j.message || j.msg || j.error_description || j.error || res.statusText;
+      } catch (e) {
+        return res.statusText || "Terjadi kesalahan";
+      }
+    }
+
+    async function refresh() {
+      const res = await fetch(`${BASE}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { apikey: KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: session.refresh_token })
+      });
+      if (!res.ok) {
+        writeSession(null);
+        showLogin("Sesi berakhir, silakan masuk lagi.");
+        throw new Error("Sesi berakhir");
+      }
+      writeSession(toSession(await res.json()));
+    }
+
+    async function token() {
+      if (!session) throw new Error("Belum masuk");
+      if (session.expires_at - 60 < Date.now() / 1000) await refresh();
+      return session.access_token;
+    }
+
+    async function api(method, path, body, extra) {
+      const t = await token();
+      const res = await fetch(BASE + path, {
+        method,
+        headers: {
+          apikey: KEY,
+          Authorization: "Bearer " + t,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+          ...(extra || {})
+        },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(await errMsg(res));
+      const txt = await res.text();
+      return txt ? JSON.parse(txt) : null;
+    }
+
+    // ==================================================================
+    // Tampilan: login / panel
+    // ==================================================================
+    function showLogin(message) {
+      $("#panel").hidden = true;
+      $("#login").hidden = false;
+      $("#cfgwarn").hidden = !!(BASE && KEY);
+      const e = $("#lerr");
+      e.hidden = !message;
+      e.textContent = message || "";
+    }
+
+    async function showPanel() {
+      $("#login").hidden = true;
+      $("#panel").hidden = false;
+      $("#who").textContent = session.email || "";
+      renderTabs();
+      await loadRows();
+    }
+
+    $("#lform").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      if (!BASE || !KEY) return showLogin("config.js belum diisi.");
+      const btn = $("#lbtn");
+      btn.disabled = true;
+      btn.textContent = "Memeriksa…";
+      try {
+        const res = await fetch(`${BASE}/auth/v1/token?grant_type=password`, {
+          method: "POST",
+          headers: { apikey: KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: $("#em").value.trim(), password: $("#pw").value })
+        });
+        if (!res.ok) throw new Error(res.status === 400 ? "Email atau kata sandi salah." : await errMsg(res));
+        writeSession(toSession(await res.json()));
+        const ok = await api("POST", "/rest/v1/rpc/is_admin", {});
+        if (ok !== true) {
+          writeSession(null);
+          throw new Error("Akun ini belum terdaftar sebagai admin. Tambahkan emailnya ke tabel admins (lihat PANDUAN.md).");
+        }
+        $("#pw").value = "";
+        await showPanel();
+      } catch (e) {
+        showLogin(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Masuk";
+      }
+    });
+
+    $("#logout").addEventListener("click", () => {
+      writeSession(null);
+      showLogin();
+    });
+
+    // ==================================================================
+    // Daftar data
+    // ==================================================================
+    const SORTS = [["def", "Urutan bawaan"], ["new", "Terbaru ditambahkan"], ["upd", "Terakhir diubah"], ["az", "Nama A–Z"]];
+    let counts = {}, all = {}, sel = new Set(), view = "table", formDirty = false, docDirty = false;
+    try { view = localStorage.getItem("kkmp_view") || "table"; } catch (e) {}
+    $("#fsort").innerHTML = SORTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+    const nameKey = (r) => ("name" in r ? "name" : "title");
+    const ago = (v) => {
+      const sec = (Date.now() - new Date(v)) / 1000;
+      if (!(sec >= 0)) return "";
+      if (sec < 60) return "baru saja";
+      if (sec < 3600) return Math.floor(sec / 60) + " menit lalu";
+      if (sec < 86400) return Math.floor(sec / 3600) + " jam lalu";
+      if (sec < 2592000) return Math.floor(sec / 86400) + " hari lalu";
+      return fmtDate(v);
+    };
+    function download(name, text, type) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type }));
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    function renderTabs() {
+      const items = [["dash", "🏠 Ringkasan"], ...Object.entries(TABLES).map(([k, t]) => [k, ({ products: "📦 ", partners: "🤝 ", posts: "📣 ", gallery: "🖼️ " })[k] + t.label]), ["store", "🏪 Toko & Kasir"], ["site", "⚙️ Teks & Pengaturan"]];
+      $("#tabs").innerHTML = items
+        .map(([k, l]) => `<button type="button" class="tab${k === cur ? " on" : ""}" data-tab="${k}">${esc(l)}${counts[k] != null ? ` <i>${counts[k]}</i>` : ""}</button>`)
+        .join("");
+    }
+
+    async function loadRows() {
+      sel.clear();
+      $("#dash").hidden = cur !== "dash";
+      $("#tw").hidden = cur === "dash";
+      $("#bar").hidden = cur === "dash" || cur === "site" || cur === "store";
+      $("#bulk").hidden = true;
+      if (cur === "dash") return loadDash();
+      if (cur === "site") return loadSite();
+      if (cur === "store") return loadStore();
+      $("#list").innerHTML = '<div class="empty">Memuat…</div>';
+      try {
+        rows = await api("GET", `/rest/v1/${cur}?select=*&order=${TABLES[cur].order}`);
+        counts[cur] = rows.length;
+        renderTabs();
+        const T = TABLES[cur];
+        const cats = [...new Set(rows.map((r) => r[T.catField]).filter(Boolean))].sort();
+        $("#fcat").hidden = !T.catField;
+        $("#fcat").innerHTML = '<option value="">Semua kategori</option>' + cats.map((c) => `<option>${esc(c)}</option>`).join("");
+        renderRows();
+      } catch (e) {
+        $("#list").innerHTML = `<div class="empty">Gagal memuat: ${esc(e.message)}</div>`;
+      }
+    }
+
+    function filtered() {
+      const T = TABLES[cur];
+      const q = $("#q").value.trim().toLowerCase(), st = $("#fst").value, ct = $("#fcat").value, so = $("#fsort").value;
+      const r = rows.filter((x) => (!q || T.search(x).toLowerCase().includes(q)) && (st === "" || String(+x.is_active) === st) && (!ct || x[T.catField] === ct));
+      const cmp = { new: (a, b) => b.id - a.id, upd: (a, b) => String(b.updated_at).localeCompare(String(a.updated_at)), az: (a, b) => T.title(a).localeCompare(T.title(b), "id") }[so];
+      return cmp ? [...r].sort(cmp) : r;
+    }
+
+    function renderRows() {
+      if (cur === "site" || cur === "dash") return;
+      const T = TABLES[cur];
+      const shown = filtered();
+      const f = $("#q").value || $("#fst").value || $("#fcat").value;
+      $("#count").textContent = `${rows.length} ${T.single}` + (f ? ` · ${shown.length} cocok` : "");
+      $("#add").textContent = "+ Tambah " + T.single;
+      $("#vw").textContent = view === "grid" ? "☰ Tabel" : "▦ Kartu";
+      $("#bulk").hidden = !sel.size;
+      $("#bn").textContent = sel.size + " dipilih";
+      if (!shown.length) {
+        $("#list").innerHTML = `<div class="empty">${rows.length ? "Tidak ada yang cocok dengan filter." : "Belum ada data. Klik “Tambah”."}</div>`;
+        return;
+      }
+      const ck = (r) => `<input type="checkbox" data-sel="${r.id}" aria-label="Pilih"${sel.has(String(r.id)) ? " checked" : ""}>`;
+      const swb = (r) => `<button type="button" class="sw${r.is_active ? " on" : ""}" role="switch" aria-checked="${!!r.is_active}" title="${r.is_active ? "Tampil. Klik untuk sembunyikan" : "Tersembunyi. Klik untuk tampilkan"}" data-act="toggle" data-id="${r.id}"></button>`;
+      const btns = (r) => `<button class="btn ghost sm ib" type="button" data-act="edit" data-id="${r.id}">Ubah</button>
+        <button class="btn ghost sm ib" type="button" data-act="dup" data-id="${r.id}" title="Duplikat">⧉</button>
+        <button class="btn danger sm ib" type="button" data-act="del" data-id="${r.id}" title="Hapus">🗑</button>`;
+      if (view === "grid") {
+        $("#list").innerHTML = `<div class="grid">${shown.map((r) => `<div class="gc${r.is_active ? "" : " off"}${sel.has(String(r.id)) ? " picked" : ""}">
+          <div class="gi">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy">` : ""}<label class="gk">${ck(r)}</label></div>
+          <div class="gb"><div class="t1">${esc(T.title(r))}</div><div class="t2">${esc(T.sub(r))}</div><div class="ga">${swb(r)}${btns(r)}</div></div></div>`).join("")}</div>`;
+        return;
+      }
+      const allOn = shown.every((r) => sel.has(String(r.id)));
+      $("#list").innerHTML = `<table>
+        <thead><tr><th class="ck"><input type="checkbox" data-all aria-label="Pilih semua"${allOn ? " checked" : ""}></th><th></th><th>${esc(T.label)}</th><th>Tampil</th><th></th></tr></thead>
+        <tbody>${shown.map((r) => `<tr class="${sel.has(String(r.id)) ? "picked" : ""}">
+          <td class="ck">${ck(r)}</td>
+          <td class="thumb"><div class="im">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy">` : ""}</div></td>
+          <td><div class="t1">${esc(T.title(r))}</div><div class="t2">${esc(T.sub(r))}</div></td>
+          <td>${swb(r)}</td>
+          <td class="act">${btns(r)}</td></tr>`).join("")}</tbody></table>`;
+    }
+
+    async function restore(tab, list) {
+      try {
+        await api("POST", `/rest/v1/${tab}`, list.map(({ id, created_at, updated_at, ...r }) => r));
+        toast("Dipulihkan");
+        if (cur === tab) await loadRows();
+      } catch (e) { toast(e.message, true); }
+    }
+
+    $("#tabs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tab]");
+      if (!b || b.dataset.tab === cur) return;
+      cur = b.dataset.tab;
+      $("#q").value = ""; $("#fst").value = ""; $("#fcat").value = ""; $("#fsort").value = "def";
+      renderTabs();
+      loadRows();
+    });
+    ["#q", "#fst", "#fcat", "#fsort"].forEach((x) => $(x).addEventListener("input", renderRows));
+    $("#add").addEventListener("click", () => openForm(null));
+    $("#reload").addEventListener("click", () => loadRows());
+    $("#vw").addEventListener("click", () => {
+      view = view === "grid" ? "table" : "grid";
+      try { localStorage.setItem("kkmp_view", view); } catch (e) {}
+      renderRows();
+    });
+    $("#exp").addEventListener("click", () => {
+      const l = filtered();
+      if (!l.length) return toast("Tidak ada data untuk diunduh", true);
+      const cols = Object.keys(l[0]);
+      const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+      download(`kkmp-${cur}-${today()}.csv`, "\ufeff" + [cols.join(","), ...l.map((r) => cols.map((c) => q(r[c])).join(","))].join("\n"), "text/csv");
+    });
+
+    $("#list").addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const row = rows.find((r) => String(r.id) === b.dataset.id);
+      if (!row) return;
+      const a = b.dataset.act;
+      try {
+        if (a === "edit") return openForm(row);
+        if (a === "toggle") {
+          await api("PATCH", `/rest/v1/${cur}?id=eq.${row.id}`, { is_active: !row.is_active });
+          row.is_active = !row.is_active;
+          toast(row.is_active ? "Ditampilkan di website" : "Disembunyikan dari website");
+          return renderRows();
+        }
+        if (a === "dup") {
+          const { id, created_at, updated_at, ...rest } = row;
+          rest[nameKey(row)] += " (salinan)";
+          rest.is_active = false;
+          await api("POST", `/rest/v1/${cur}`, rest);
+          toast("Diduplikasi (disembunyikan sampai Anda tampilkan)");
+          return loadRows();
+        }
+        if (a === "del") {
+          if (!confirm(`Hapus “${TABLES[cur].title(row)}”?`)) return;
+          await api("DELETE", `/rest/v1/${cur}?id=eq.${row.id}`);
+          toast("Dihapus", false, { label: "Urungkan", fn: () => restore(cur, [row]) });
+          return loadRows();
+        }
+      } catch (err) { toast(err.message, true); }
+    });
+    $("#list").addEventListener("change", (e) => {
+      const t = e.target;
+      if (t.dataset.sel !== undefined) t.checked ? sel.add(t.dataset.sel) : sel.delete(t.dataset.sel);
+      else if (t.hasAttribute("data-all")) filtered().forEach((r) => (t.checked ? sel.add(String(r.id)) : sel.delete(String(r.id))));
+      else return;
+      renderRows();
+    });
+    $("#bulk").addEventListener("click", async (e) => {
+      const a = e.target.dataset.b;
+      if (!a) return;
+      if (a === "clr") { sel.clear(); return renderRows(); }
+      const ids = [...sel].join(",");
+      try {
+        if (a === "show" || a === "hide") {
+          await api("PATCH", `/rest/v1/${cur}?id=in.(${ids})`, { is_active: a === "show" });
+          toast(`${sel.size} item ${a === "show" ? "ditampilkan" : "disembunyikan"}`);
+        }
+        if (a === "del") {
+          const gone = rows.filter((r) => sel.has(String(r.id)));
+          if (!confirm(`Hapus ${gone.length} item terpilih?`)) return;
+          await api("DELETE", `/rest/v1/${cur}?id=in.(${ids})`);
+          toast(`${gone.length} item dihapus`, false, { label: "Urungkan", fn: () => restore(cur, gone) });
+        }
+        await loadRows();
+      } catch (err) { toast(err.message, true); }
+    });
+
+    // ----- Ringkasan (dashboard) -----
+    async function loadDash() {
+      $("#dash").innerHTML = '<div class="empty">Memuat ringkasan…</div>';
+      try {
+        const keys = Object.keys(TABLES);
+        const res = await Promise.all([...keys.map((k) => api("GET", `/rest/v1/${k}?select=*&order=updated_at.desc`)), api("GET", "/rest/v1/site_content?select=key,value,updated_at")]);
+        keys.forEach((k, i) => { all[k] = res[i]; counts[k] = res[i].length; });
+        siteRows = Object.fromEntries(res[keys.length].map((x) => [x.key, x]));
+        renderTabs();
+        renderDash();
+      } catch (e) {
+        $("#dash").innerHTML = `<div class="empty">Gagal memuat: ${esc(e.message)}</div>`;
+      }
+    }
+    function renderDash() {
+      const h = new Date().getHours();
+      const hi = h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
+      const stats = Object.entries(TABLES).map(([k, T]) => {
+        const L = all[k] || [], on = L.filter((r) => r.is_active).length;
+        return `<div class="stat"><div class="sh"><b>${esc(T.label)}</b><button class="btn ghost sm" type="button" data-go="${k}" data-new="1">+ Tambah</button></div>
+          <div class="sn">${L.length}</div><div class="t2">${on} tampil · ${L.length - on} disembunyikan · ${L.filter((r) => !r.image_url).length} tanpa foto</div>
+          <button class="lnk" type="button" data-go="${k}">Kelola ${esc(T.label.toLowerCase())} ➜</button></div>`;
+      }).join("");
+      const P = all.products || [], M = all.partners || [], N = all.posts || [], todo = [];
+      let n = P.filter((r) => r.is_active && !r.image_url).length;
+      if (n) todo.push([`${n} produk tampil belum punya foto`, "products"]);
+      n = P.filter((r) => !r.description).length;
+      if (n) todo.push([`${n} produk belum punya deskripsi`, "products"]);
+      n = M.filter((r) => !r.is_active).length;
+      if (n) todo.push([`${n} mitra masih disembunyikan (menunggu persetujuan publikasi?)`, "partners"]);
+      const lp = N.map((r) => r.published_at).sort().pop();
+      if (!lp) todo.push(["Belum ada pengumuman", "posts"]);
+      else { const d = Math.floor((Date.now() - new Date(lp)) / 864e5); if (d > 30) todo.push([`Pengumuman terakhir terbit ${d} hari lalu`, "posts"]); }
+      const miss = DOCS.filter((d) => !siteRows[d.key]).length;
+      if (miss) todo.push([`${miss} bagian teks situs belum tersimpan (memakai bawaan)`, "site"]);
+      const rec = Object.keys(TABLES).flatMap((k) => (all[k] || []).map((r) => ({ k, r }))).sort((a, b) => String(b.r.updated_at).localeCompare(String(a.r.updated_at))).slice(0, 8);
+      const cc = {};
+      P.forEach((r) => (cc[r.category] = (cc[r.category] || 0) + 1));
+      const cl = Object.entries(cc).sort((a, b) => b[1] - a[1]), mx = cl.length ? cl[0][1] : 1;
+      const done = DOCS.length - miss;
+      $("#dash").innerHTML = `<div class="hello"><h2>${hi}${session.email ? ", " + esc(session.email.split("@")[0]) : ""} 👋</h2><div class="t2">Ringkasan isi website KKMP Jelupang. Pintasan: <b>/</b> cari · <b>n</b> tambah baru · <b>Ctrl+S</b> simpan formulir.</div></div>
+        <div class="stats">${stats}</div>
+        <div class="cols">
+          <div class="card"><h3>Perlu perhatian</h3>${todo.length ? todo.map(([t, k]) => `<button class="it" type="button" data-go="${k}"><span class="t1">⚠️ ${esc(t)}</span>➜</button>`).join("") : '<div class="ok">✓ Semua beres</div>'}</div>
+          <div class="card"><h3>Aktivitas terbaru</h3>${rec.length ? rec.map(({ k, r }) => `<button class="it" type="button" data-go="${k}" data-id="${r.id}"><span class="t1">${esc(TABLES[k].title(r))}</span><span class="t2">${esc(TABLES[k].single)} · ${esc(ago(r.updated_at))}</span></button>`).join("") : '<div class="t2">Belum ada data.</div>'}</div>
+        </div>
+        <div class="cols">
+          <div class="card"><h3>Produk per kategori</h3>${cl.length ? cl.map(([c, v]) => `<div class="brow"><span>${esc(c)}</span><div class="tr"><i style="width:${(v / mx) * 100}%"></i></div><b>${v}</b></div>`).join("") : '<div class="t2">Belum ada produk.</div>'}</div>
+          <div class="card"><h3>Kelengkapan teks situs</h3><div class="prog"><i style="width:${(done / DOCS.length) * 100}%"></i></div>
+            <div class="t2" style="margin:6px 0 12px">${done} dari ${DOCS.length} bagian tersimpan di database</div>
+            <div class="acts"><button class="btn ghost sm" type="button" data-go="site">Buka Teks & Pengaturan</button>
+            <a class="btn ghost sm" href="index.html" target="_blank" rel="noopener">Lihat website ➜</a>
+            <button class="btn ghost sm" type="button" data-bk="1">⬇ Cadangkan semua data</button></div></div>
+        </div>`;
+    }
+    async function go(tab, id, isNew) {
+      cur = tab;
+      $("#q").value = ""; $("#fst").value = ""; $("#fcat").value = ""; $("#fsort").value = "def";
+      renderTabs();
+      await loadRows();
+      if (isNew) openForm(null);
+      else if (id && tab === "site") openDoc(id);
+      else if (id) { const r = rows.find((x) => String(x.id) === String(id)); if (r) openForm(r); }
+    }
+    function siteBackup() {
+      return Object.values(siteRows).map((x) => ({ key: x.key, value: x.value }));
+    }
+    $("#dash").addEventListener("click", (e) => {
+      const g = e.target.closest("[data-go]");
+      if (g) return go(g.dataset.go, g.dataset.id, g.dataset.new);
+      if (e.target.closest("[data-bk]")) {
+        const out = { exported_at: new Date().toISOString() };
+        Object.keys(TABLES).forEach((k) => (out[k] = all[k] || []));
+        out.site_content = siteBackup();
+        download(`kkmp-cadangan-${today()}.json`, JSON.stringify(out, null, 2), "application/json");
+        toast("Cadangan diunduh");
+      }
+    });
+
+    // ----- Pintasan keyboard, seret-lepas gambar, penjaga perubahan -----
+    document.addEventListener("keydown", (e) => {
+      const fo = !$("#ov").hidden, dof = !$("#dov").hidden;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && (fo || dof)) {
+        e.preventDefault();
+        return (fo ? $("#form") : $("#dform")).requestSubmit();
+      }
+      if (e.key === "Escape") { if (dof) closeDoc(); else if (fo) closeForm(); return; }
+      if (fo || dof || $("#panel").hidden || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || "")) return;
+      if (e.key === "/" && !$("#bar").hidden) { e.preventDefault(); $("#q").focus(); }
+      if (e.key === "n" && TABLES[cur]) openForm(null);
+    });
+    const pvOf = (e) => e.target.closest && e.target.closest(".pv");
+    document.addEventListener("dragover", (e) => { const p = pvOf(e); if (p) { e.preventDefault(); p.classList.add("drag"); } });
+    document.addEventListener("dragleave", (e) => { const p = pvOf(e); if (p) p.classList.remove("drag"); });
+    document.addEventListener("drop", (e) => {
+      const p = pvOf(e);
+      if (!p) return;
+      e.preventDefault();
+      p.classList.remove("drag");
+      const inp = p.parentElement.querySelector("input[type=file]");
+      if (inp && e.dataTransfer.files[0]) { inp.files = e.dataTransfer.files; inp.dispatchEvent(new Event("change", { bubbles: true })); }
+    });
+    ["input", "change"].forEach((ev) => $("#form").addEventListener(ev, () => (formDirty = true)));
+    window.addEventListener("beforeunload", (e) => { if (formDirty || docDirty) e.preventDefault(); });
+
+    // ==================================================================
+    // Formulir tambah / ubah
+    // ==================================================================
+    function fieldHtml(f, v, T) {
+      const id = "f_" + f.k;
+      const req = f.required ? " required" : "";
+      const help = f.help ? `<small>${esc(f.help)}</small>` : "";
+      if (f.type === "textarea")
+        return `<div class="fld"><label for="${id}">${esc(f.label)}</label><textarea id="${id}" name="${f.k}"${req}>${esc(v)}</textarea>${help}</div>`;
+      if (f.type === "checkbox")
+        return `<div class="fld"><label class="chk"><input type="checkbox" id="${id}" name="${f.k}"${v ? " checked" : ""}> ${esc(f.label)}</label></div>`;
+      if (f.type === "image")
+        return `<div class="fld imgf">
+          <label>${esc(f.label)}</label>
+          <div class="pv" id="pv">${v ? `<img src="${esc(v)}" alt="">` : ""}</div>
+          <div class="row">
+            <input type="file" id="file" accept="image/*">
+            <button class="btn ghost sm" type="button" id="clr">Hapus gambar</button>
+            <span class="st" id="ust"></span>
+          </div>
+          <input type="text" id="${id}" name="${f.k}" value="${esc(v)}" placeholder="…atau tempel alamat gambar https://…">
+          <small>Foto otomatis diperkecil (maks. 1280 px) sebelum diunggah. Boleh dikosongkan.</small>
+        </div>`;
+      const list = f.list ? ` list="dl_${f.k}"` : "";
+      const dl = f.list
+        ? `<datalist id="dl_${f.k}">${[...new Set([...T.cats, ...rows.map((r) => r[T.catField]).filter(Boolean)])].map((c) => `<option value="${esc(c)}">`).join("")}</datalist>`
+        : "";
+      return `<div class="fld"><label for="${id}">${esc(f.label)}</label>
+        <input type="${f.type}" id="${id}" name="${f.k}" value="${esc(v)}"${req}${list}${f.ph ? ` placeholder="${esc(f.ph)}"` : ""}>${dl}${help}</div>`;
+    }
+
+    function openForm(row) {
+      const T = TABLES[cur];
+      editing = { id: row ? row.id : null };
+      $("#form").innerHTML =
+        `<h2>${row ? "Ubah" : "Tambah"} ${esc(T.single)}</h2>` +
+        `<div class="msg err" id="ferr" hidden></div>` +
+        T.fields
+          .map((f) => {
+            let v = row ? row[f.k] : f.def;
+            if (v === "today") v = today();
+            if (v == null) v = f.type === "checkbox" ? false : "";
+            return fieldHtml(f, v, T);
+          })
+          .join("") +
+        `<div class="foot">
+          <button class="btn ghost" type="button" id="cancel">Batal</button>
+          <button class="btn" type="submit" id="save">Simpan</button>
+        </div>`;
+      $("#ov").hidden = false;
+      formDirty = false;
+      const first = $("#form input[type=text]");
+      if (first) first.focus();
+    }
+    const closeForm = (force) => {
+      if (formDirty && !force && !confirm("Perubahan belum disimpan. Tutup tanpa menyimpan?")) return;
+      $("#ov").hidden = true;
+      editing = null;
+      formDirty = false;
+    };
+
+    $("#form").addEventListener("click", (e) => {
+      if (e.target.id === "cancel") closeForm();
+      if (e.target.id === "clr") {
+        $("#f_image_url").value = "";
+        $("#pv").innerHTML = "";
+        $("#file").value = "";
+      }
+    });
+    $("#ov").addEventListener("mousedown", (e) => {
+      if (e.target.id === "ov") closeForm();
+    });
+
+    // pratinjau saat alamat gambar diketik/ditempel
+    $("#form").addEventListener("input", (e) => {
+      if (e.target.id === "f_image_url") {
+        const v = e.target.value.trim();
+        $("#pv").innerHTML = /^https?:\/\//i.test(v) ? `<img src="${esc(v)}" alt="">` : "";
+      }
+    });
+
+    $("#form").addEventListener("change", async (e) => {
+      if (e.target.id !== "file" || !e.target.files[0]) return;
+      const file = e.target.files[0];
+      const st = $("#ust");
+      const save = $("#save");
+      save.disabled = true;
+      try {
+        st.textContent = "Memproses gambar…";
+        const blob = await compress(file);
+        if (blob.size > 5 * 1024 * 1024) throw new Error("Ukuran gambar terlalu besar (maks. 5 MB).");
+        st.textContent = "Mengunggah…";
+        const url = await upload(cur, blob, file.name);
+        $("#f_image_url").value = url;
+        $("#pv").innerHTML = `<img src="${esc(url)}" alt="">`;
+        st.textContent = "Selesai ✓";
+      } catch (err) {
+        st.textContent = "Gagal: " + err.message;
+      } finally {
+        save.disabled = false;
+        e.target.value = "";
+      }
+    });
+
+    $("#form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const T = TABLES[cur];
+      const body = {};
+      T.fields.forEach((f) => {
+        const el = $("#f_" + f.k);
+        if (f.type === "checkbox") body[f.k] = el.checked;
+        else if (f.type === "number") body[f.k] = parseInt(el.value, 10) || 0;
+        else {
+          const v = el.value.trim();
+          body[f.k] = v === "" && !f.required ? null : v;
+        }
+      });
+      const btn = $("#save");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan…";
+      try {
+        if (editing.id) await api("PATCH", `/rest/v1/${cur}?id=eq.${editing.id}`, body);
+        else await api("POST", `/rest/v1/${cur}`, body);
+        closeForm(true);
+        toast("Tersimpan", false, { label: "Pratinjau", fn: openPreview });
+        await loadRows();
+      } catch (err) {
+        const box = $("#ferr");
+        box.hidden = false;
+        box.textContent = err.message;
+        btn.disabled = false;
+        btn.textContent = "Simpan";
+      }
+    });
+
+    // ==================================================================
+    // Gambar: perkecil lalu unggah ke Supabase Storage
+    // ==================================================================
+    function compress(file, max = 1280, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        if (!/^image\//.test(file.type)) return reject(new Error("File bukan gambar."));
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return resolve(file); // gif/svg apa adanya
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const s = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.round(img.width * s);
+          const h = Math.round(img.height * s);
+          const c = document.createElement("canvas");
+          c.width = w;
+          c.height = h;
+          const x = c.getContext("2d");
+          x.fillStyle = "#fff";
+          x.fillRect(0, 0, w, h);
+          x.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          c.toBlob((b) => (b ? resolve(b) : reject(new Error("Gagal memproses gambar."))), "image/jpeg", quality);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("File gambar tidak dapat dibaca."));
+        };
+        img.src = url;
+      });
+    }
+
+    async function upload(table, blob, name) {
+      const t = await token();
+      const ext = blob.type === "image/jpeg" ? "jpg" : (name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const base =
+        name.replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "gambar";
+      const path = `${table}/${Date.now()}-${base}.${ext}`;
+      const res = await fetch(`${BASE}/storage/v1/object/${BUCKET}/${path}`, {
+        method: "POST",
+        headers: { apikey: KEY, Authorization: "Bearer " + t, "Content-Type": blob.type || "application/octet-stream", "x-upsert": "false" },
+        body: blob
+      });
+      if (!res.ok) throw new Error(await errMsg(res));
+      return `${BASE}/storage/v1/object/public/${BUCKET}/${path}`;
+    }
+
+    // ==================================================================
+    // Teks & Pengaturan situs (tabel site_content)
+    // Editor berbasis skema: tiap bagian = satu baris di tabel site_content.
+    // ==================================================================
+    const PAGES = ["beranda", "profil", "katalog", "kemitraan", "kontak"];
+    const KINDS = [["kkmp", "KKMP (pusat distribusi)"], ["warung", "Warung"], ["toko", "Toko"], ["apotek", "Apotek"]];
+
+    // pembuat spesifikasi isian
+    const T_ = (k, label, o = {}) => ({ k, label, type: "text", ...o });
+    const A_ = (k, label, o = {}) => ({ k, label, type: "textarea", ...o });
+    const L_ = (k, label, o = {}) => ({ k, label, type: "link", ph: "katalog, kontak, atau https://…", ...o });
+    const I_ = (k, label, o = {}) => ({ k, label, type: "image", ...o });
+    const N_ = (k, label, o = {}) => ({ k, label, type: "number", def: 0, ...o });
+    const S_ = (k, label, options, o = {}) => ({ k, label, type: "select", options, ...o });
+    const O_ = (k, label, fields, o = {}) => ({ k, label, type: "object", fields, ...o });
+    const U_ = (k, label, fields, o = {}) => ({ k, label, type: "tuple", fields, ...o });
+    const LS = (k, label, of, o = {}) => ({ k, label, type: "list", of, ...o });
+
+    const btnFields = (a, b) => [T_("", a), L_("", b)];
+    const heroFields = (cap, red) => [
+      S_("red", "Gaya warna hero", [["0", "Terang"], ["1", "Merah"]], { def: red ? "1" : "0" }),
+      T_("label", "Label kecil di atas judul"),
+      T_("h1", "Judul"),
+      T_("accent", "Kata sorot (berwarna)"),
+      A_("text", "Paragraf pengantar"),
+      U_("b1", "Tombol utama", btnFields("Teks tombol", "Tautan"), { help: "Kosongkan keduanya agar tombol tidak tampil." }),
+      U_("b2", "Tombol kedua", btnFields("Teks tombol", "Tautan")),
+      cap
+        ? U_("cap", "Keterangan di bawah gambar", [T_("", "Judul keterangan"), T_("", "Isi keterangan")])
+        : T_("quote", "Teks di atas gambar"),
+      I_("img", "Gambar hero")
+    ];
+    const heroDoc = (page, label) => ({
+      key: "hero_" + page,
+      label: "Hero - " + label,
+      desc: "Judul, paragraf, tombol, dan gambar bagian paling atas halaman.",
+      fields: heroFields(page === "profil", page === "profil" || page === "kemitraan")
+    });
+    const cardItem = O_("", "", [T_("emoji", "Ikon (emoji)"), T_("title", "Judul"), A_("text", "Teks")]);
+
+    const C_ = (k, label, def) => ({ k, label, type: "color", def });
+    const FONTS = ["Poppins", "Inter", "Nunito", "Montserrat", "DM Sans", "Plus Jakarta Sans", "Lora", "Merriweather", "Playfair Display"].map((f) => [f, f]);
+    const UI_FIELDS = [
+      ["searchPh", "Pencarian header: teks petunjuk"], ["searchAria", "Pencarian header: label aksesibilitas"],
+      ["navTitle", "Footer: judul kolom navigasi"], ["contactTitle", "Footer: judul kolom kontak"], ["socialTitle", "Footer: judul kolom sosial media"],
+      ["catSearchPh", "Katalog: teks petunjuk pencarian"], ["sortLabel", "Katalog: label urutkan"], ["sortNew", "Katalog: urutan terbaru"], ["sortAz", "Katalog: urutan A-Z"],
+      ["noProduct", "Katalog: pesan produk tidak ditemukan"], ["unitLabel", "Katalog: label satuan"], ["confirmLink", "Katalog: tautan konfirmasi ketersediaan"],
+      ["latestLabel", "Katalog: label pembaruan"], ["prodSample", "Jendela produk: keterangan di samping nama (kosong = tidak tampil)"],
+      ["prodBadge", "Jendela produk: lencana"], ["catLabel", "Jendela produk: label kategori"], ["prodNote", "Jendela produk: catatan harga"], ["modalBtn", "Jendela detail: tombol"],
+      ["dirContact", "Direktori: tautan hubungi"], ["dirDetail", "Direktori: tombol detail"], ["dirNote", "Direktori: catatan detail mitra"], ["noPartner", "Direktori: pesan kosong"],
+      ["readMore", "Pengumuman: teks baca selengkapnya"],
+      ["videoSoon", "Profil: judul video belum ada"], ["videoSoonSub", "Profil: keterangan video belum ada"], ["videoTitle", "Profil: judul aksesibilitas video"],
+      ["mapTitle", "Peta: judul aksesibilitas"],
+      ["loginEmail", "Jendela masuk: label email"], ["loginPass", "Jendela masuk: label kata sandi"], ["loginSoon", "Jendela masuk: pesan setelah kirim"],
+      ["noLink", "Pesan bila tautan belum diisi"], ["detailNote", "Jendela detail: catatan"], ["detailBtn", "Jendela detail: tombol"],
+      ["copied", "Pesan setelah menyalin"], ["copyFail", "Pesan gagal menyalin"]
+    ];
+    const ICON_ = T_("emoji", "Ikon (emoji)");
+    const stripF = LS("items", "Kotak informasi", O_("", "", [ICON_, T_("title", "Judul"), T_("sub", "Keterangan"), L_("link", "Tautan")]), { itemLabel: "Kotak", add: "Tambah kotak" });
+    const tileItem = O_("", "", [T_("title", "Judul"), T_("sub", "Keterangan"), ICON_, I_("img", "Gambar"), L_("link", "Tautan")]);
+    const moreF = (k) => U_(k || "more", "Tautan “lihat semua”", btnFields("Teks", "Tautan"));
+    const limitF = N_("limit", "Jumlah yang ditampilkan", { def: 3, help: "Pengumuman / dokumentasi terbaru yang ditampilkan." });
+    const sideF = (label) => O_("side", label, [ICON_, T_("title", "Judul"), A_("text", "Teks"), U_("btn", "Tombol", btnFields("Teks tombol", "Tautan"))]);
+    const ctaF = O_("cta", "Kotak ajakan (CTA) di bawah halaman", [ICON_, T_("title", "Judul"), A_("text", "Teks"), U_("btn", "Tombol", btnFields("Teks tombol", "Tautan"))], { help: "Kosongkan judul dan teks agar kotak tidak tampil." });
+    const BLOCK_LABELS = {
+      strip: "Kotak informasi (strip)", ustrip: "Strip unit usaha", nodes: "Peran KKMP (diagram)", tiles: "Kategori / dokumentasi",
+      map: "Peta", posts: "Pengumuman", units: "Unit usaha", split: "Peran KKMP (teks)", cards: "Nilai & prinsip",
+      ident: "Identitas & video", people: "Pengurus", catalog: "Katalog produk", dir: "Direktori mitra", faqc: "FAQ & kontak"
+    };
+    const layoutF = (types) => {
+      const opts = types.map((t) => [t, BLOCK_LABELS[t]]);
+      return [
+        LS("order", "Urutan & tampilan bagian", S_("", "", opts, { def: opts[0][0] }), { itemLabel: "Bagian", add: "Tambah bagian", help: "Bagian yang dihapus dari daftar tidak tampil. Gunakan ↑ ↓ untuk mengatur urutan." }),
+        LS("custom", "Bagian tambahan (teks, gambar, video, peta, formulir)", O_("", "", [
+          T_("label", "Label kecil"), T_("title", "Judul"), A_("text", "Teks"),
+          I_("img", "Gambar"),
+          A_("embed", "Sematan: YouTube, Google Maps, Vimeo, atau Google Form", { help: "Tempel tautan atau kode sematan. Bila diisi, menggantikan gambar." }),
+          N_("embedH", "Tinggi sematan peta / formulir (px)", { def: 0, help: "0 = otomatis." }),
+          S_("layout", "Tata letak", [["side", "Teks kiri, media kanan"], ["left", "Media kiri, teks kanan"], ["full", "Teks di atas, media lebar penuh"]], { def: "side" }),
+          S_("bg", "Latar", [["", "Otomatis"], ["sand", "Krem"]], { def: "" }),
+          U_("btn", "Tombol", btnFields("Teks tombol", "Tautan")),
+          S_("after", "Tampil setelah", [["", "Setelah hero (paling atas)"], ...opts], { def: "" })
+        ]), { itemLabel: "Bagian tambahan", add: "Tambah bagian tambahan" })
+      ];
+    };
+    const pageDoc = (page, label, types, blockFields) => ({
+      key: "page_" + page, label: "Isi halaman - " + label,
+      desc: "Judul bagian, kotak informasi, peta, kotak ajakan, urutan bagian, dan bagian tambahan.",
+      fields: [O_("blocks", "Isi bagian", blockFields), ctaF, ...layoutF(types)]
+    });
+    const PAGE_DOCS = [
+      pageDoc("beranda", "Beranda", ["ustrip", "nodes", "tiles", "map", "posts"], [
+        O_("nodes", "Peran KKMP (diagram)", [
+          T_("label", "Label kecil"), T_("title", "Judul"), A_("text", "Teks"),
+          U_("btn", "Tombol", btnFields("Teks tombol", "Tautan")), T_("pill", "Teks penghubung"),
+          LS("items", "Simpul", O_("", "", [T_("title", "Judul"), T_("sub", "Keterangan"), ICON_, I_("img", "Gambar"), A_("desc", "Penjelasan (muncul saat diklik)")]), { itemLabel: "Simpul", add: "Tambah simpul" })
+        ]),
+        O_("tiles", "Kategori produk unggulan", [
+          T_("label", "Label kecil"), T_("title", "Judul"), moreF(),
+          LS("items", "Kategori", tileItem, { itemLabel: "Kategori", add: "Tambah kategori" })
+        ]),
+        O_("map", "Jaringan usaha mitra (peta)", [
+          T_("label", "Label kecil"), T_("title", "Judul"), A_("text", "Teks"), U_("btn", "Tombol", btnFields("Teks tombol", "Tautan")),
+          sideF("Kartu samping")
+        ]),
+        O_("posts", "Informasi terbaru", [T_("label", "Label kecil"), T_("title", "Judul"), moreF(), limitF])
+      ]),
+      pageDoc("profil", "Profil KKMP", ["split", "units", "cards", "ident", "people", "tiles"], [
+        O_("tiles", "Dokumentasi kegiatan", [T_("title", "Judul"), moreF(), limitF])
+      ]),
+      pageDoc("katalog", "Katalog Produk", ["strip", "catalog"], [
+        O_("strip", "Kotak informasi", [stripF]),
+        O_("catalog", "Katalog", [
+          T_("title", "Judul"),
+          LS("cats", "Kategori", T_("", ""), { itemLabel: "Kategori", add: "Tambah kategori", help: "Kategori pertama = “semua”. Kategori baru dari produk otomatis ditambahkan." }),
+          A_("note", "Catatan di bawah judul"),
+          O_("info", "Kotak informasi penting", [T_("title", "Judul"), A_("text", "Teks"), T_("upd", "Teks pembaruan", { help: "Kosong = tanggal pembaruan otomatis dari produk." })])
+        ])
+      ]),
+      pageDoc("kemitraan", "Kemitraan", ["strip", "map", "dir"], [
+        O_("strip", "Kotak informasi", [stripF]),
+        O_("map", "Peta jaringan mitra", [
+          T_("label", "Label kecil"), T_("title", "Judul"), A_("text", "Teks"), U_("btn", "Tombol", btnFields("Teks tombol", "Tautan")),
+          LS("legend", "Keterangan legenda (3 item)", T_("", ""), { itemLabel: "Legenda", add: "Tambah legenda" }), A_("legnote", "Catatan legenda")
+        ]),
+        O_("dir", "Direktori mitra", [
+          T_("title", "Judul"), A_("sub", "Paragraf pengantar"), moreF(),
+          LS("cats", "Kategori", T_("", ""), { itemLabel: "Kategori", add: "Tambah kategori", help: "Kategori pertama = “semua”." }),
+          A_("note", "Catatan di bawah daftar"),
+          O_("side", "Kartu “Ingin menjadi mitra?”", [
+            ICON_, T_("title", "Judul"), A_("text", "Teks"),
+            LS("list", "Poin-poin", T_("", ""), { itemLabel: "Poin", add: "Tambah poin" }),
+            U_("btn", "Tombol", btnFields("Teks tombol", "Tautan"))
+          ])
+        ])
+      ]),
+      pageDoc("kontak", "Informasi & Kontak", ["posts", "tiles", "faqc"], [
+        O_("posts", "Pengumuman terbaru", [T_("title", "Judul"), moreF(), limitF]),
+        O_("tiles", "Dokumentasi kegiatan", [T_("title", "Judul"), moreF(), limitF, sideF("Kartu samping (galeri)")])
+      ])
+    ];
+
+    const DOCS = [
+      {
+        key: "menu", label: "Menu navigasi", desc: "Teks dan tujuan tiap menu di header dan footer.",
+        fields: [LS("nav", "Daftar menu", U_("", "", [T_("", "Teks menu"), L_("", "Halaman / tautan")]), { itemLabel: "Menu", add: "Tambah menu" })]
+      },
+      {
+        key: "brand", label: "Identitas & logo", desc: "Nama, slogan, dan logo (header dan footer).",
+        fields: [T_("name", "Nama"), T_("tagline", "Slogan / keterangan"), I_("logo", "Logo"),
+          T_("siteTitle", "Judul tab browser", { help: "Kosong = memakai nama." }),
+          T_("emoji", "Ikon tab (emoji)", { help: "Dipakai bila gambar ikon di bawah kosong." }),
+          I_("favicon", "Gambar ikon tab (favicon)")]
+      },
+      {
+        key: "footer", label: "Footer, alamat & sosial media", desc: "Deskripsi, kontak di footer, tautan sosial media, dan teks hak cipta.",
+        fields: [
+          A_("desc", "Deskripsi singkat"),
+          LS("contact", "Alamat & kontak footer", A_("", ""), { itemLabel: "Baris", add: "Tambah baris" }),
+          LS("social", "Sosial media", O_("", "", [T_("t", "Label singkat", { ph: "IG, YT, f" }), L_("link", "Tautan", { ph: "https://…" })]), { itemLabel: "Akun", add: "Tambah akun" }),
+          A_("note", "Teks hak cipta (setelah tulisan © tahun dan nama)")
+        ]
+      },
+      {
+        key: "peta", label: "Pengaturan peta", desc: "Gambar latar, sematan Google Maps, dan catatan pada peta.",
+        fields: [
+          I_("mapImg", "Gambar latar peta (peta ilustratif)"),
+          A_("mapEmbed", "Kode sematan Google Maps - peta jaringan mitra", { help: "Google Maps > Bagikan > Sematkan peta > salin HTML. Kosong = peta ilustratif dengan pin di bawah." }),
+          A_("mapEmbedKkmp", "Kode sematan Google Maps - lokasi KKMP (halaman Informasi & Kontak)", { help: "Kosong = memakai sematan di atas." }),
+          T_("mapNote", "Catatan di sudut peta ilustratif")
+        ]
+      },
+      {
+        key: "pins", label: "Pin peta", desc: "Titik lokasi pada peta ilustratif. Atur posisi dengan mengeklik peta.",
+        fields: [
+          LS("pins", "Daftar pin", O_("", "", [
+            T_("name", "Nama"),
+            S_("kind", "Jenis", KINDS, { def: "warung" }),
+            N_("x", "Posisi kiri-kanan (0-100)", { def: 50 }),
+            N_("y", "Posisi atas-bawah (0-100)", { def: 50 }),
+            T_("info", "Keterangan (muncul saat pin diklik)")
+          ]), { itemLabel: "Pin", add: "Tambah pin", map: true, help: "Pin pertama dipakai sebagai lokasi KKMP pada halaman Informasi & Kontak." })
+        ]
+      },
+      {
+        key: "units", label: "Unit usaha KKMP", desc: "Tujuh jenis usaha KKMP; tampil sebagai blok klik cepat di Beranda dan section di halaman Profil.",
+        fields: [
+          T_("label", "Label kecil di atas judul"),
+          T_("title", "Judul bagian"),
+          A_("sub", "Paragraf pengantar"),
+          LS("items", "Daftar unit usaha", O_("", "", [T_("emoji", "Ikon (emoji)"), T_("title", "Nama unit"), T_("short", "Nama singkat (blok klik cepat Beranda)"), A_("text", "Deskripsi"), L_("link", "Tautan")]), { itemLabel: "Unit", add: "Tambah unit" })
+        ]
+      },
+      {
+        key: "login", label: "Tombol Masuk (pojok kanan atas)", desc: "Teks tombol dan jendela masuk di header website.",
+        fields: [T_("label", "Teks tombol"), T_("title", "Judul jendela"), A_("text", "Keterangan di jendela")]
+      },
+      {
+        key: "theme", label: "Tema & tampilan", desc: "Warna utama, warna latar, dan jenis huruf seluruh website.",
+        fields: [
+          C_("red", "Warna utama (tombol, aksen)", "#B84435"), C_("yel", "Warna sorot / kuning", "#F6EB60"),
+          C_("mar", "Warna gelap (judul, footer)", "#632B2B"), C_("off", "Latar putih", "#FFFFFF"),
+          C_("canvas", "Latar krem muda", "#FFF9F0"), C_("sand", "Latar krem", "#F2EAE3"),
+          C_("ink", "Warna teks", "#272227"), C_("mut", "Warna teks pudar", "#6d6368"),
+          C_("pink", "Latar merah muda", "#FBE6E1"), C_("cream", "Latar kuning muda", "#FFF6D8"),
+          S_("font", "Jenis huruf", FONTS, { def: "Poppins" })
+        ]
+      },
+      {
+        key: "ui", label: "Teks antarmuka (tombol, label, pesan)", desc: "Teks kecil di pencarian, katalog, direktori mitra, jendela detail, footer, dan pesan.",
+        fields: UI_FIELDS.map(([k, l]) => T_(k, l))
+      },
+      heroDoc("beranda", "Beranda"),
+      heroDoc("profil", "Profil KKMP"),
+      heroDoc("katalog", "Katalog Produk"),
+      heroDoc("kemitraan", "Kemitraan"),
+      heroDoc("kontak", "Informasi & Kontak"),
+      {
+        key: "profil", label: "Halaman Profil KKMP", desc: "Peran, nilai, identitas (dengan video profil YouTube), identitas kelembagaan, dan pengurus.",
+        fields: [
+          O_("split", "Peran KKMP dalam Ekosistem Lokal", [
+            T_("title", "Judul"), A_("text", "Teks"),
+            LS("items", "Poin-poin", cardItem, { itemLabel: "Poin", add: "Tambah poin" })
+          ]),
+          O_("cards", "Nilai dan Prinsip Kerja", [
+            T_("title", "Judul bagian"),
+            LS("items", "Daftar nilai", cardItem, { itemLabel: "Nilai", add: "Tambah nilai" })
+          ]),
+          O_("ident", "Identitas Kelembagaan", [
+            T_("title", "Judul bagian"), T_("video", "Tautan video profil YouTube", { ph: "https://www.youtube.com/watch?v=…  atau  https://youtu.be/…", help: "Tempel tautan satu video. Kosong = kotak “segera hadir”." }),
+            LS("rows", "Baris identitas", U_("", "", [T_("", "Ikon (emoji)"), T_("", "Judul"), A_("", "Isi")]), { itemLabel: "Baris", add: "Tambah baris" })
+          ]),
+          O_("people", "Pengurus", [
+            T_("title", "Judul bagian"),
+            LS("items", "Daftar pengurus", O_("", "", [T_("name", "Nama"), T_("sub", "Jabatan"), I_("img", "Foto")]), { itemLabel: "Pengurus", add: "Tambah pengurus" })
+          ])
+        ]
+      },
+      {
+        key: "kontak", label: "FAQ & kontak resmi", desc: "Pertanyaan umum dan kartu kontak di halaman Informasi & Kontak.",
+        fields: [
+          T_("faqTitle", "Judul FAQ"),
+          LS("faq", "Pertanyaan & jawaban", U_("", "", [T_("", "Pertanyaan"), A_("", "Jawaban")]), { itemLabel: "Pertanyaan", add: "Tambah pertanyaan" }),
+          T_("ctitle", "Judul kontak"),
+          LS("contact", "Kartu kontak", O_("", "", [
+            T_("emoji", "Ikon (emoji)"), T_("title", "Judul"),
+            LS("lines", "Baris teks", T_("", ""), { itemLabel: "Baris", add: "Tambah baris" })
+          ]), { itemLabel: "Kontak", add: "Tambah kartu kontak" }),
+          U_("btn", "Tombol peta", btnFields("Teks tombol", "Tautan https://…"))
+        ]
+      },
+      ...PAGE_DOCS
+    ];
+
+    // ----- state & util -----
+    let siteRows = {};
+    let dkey = null;
+    let dstate = {};
+    let activePin = 0;
+
+    const getP = (o, p) => p.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
+    const setP = (o, p, v) => {
+      const ks = p.split(".");
+      const last = ks.pop();
+      ks.reduce((a, k) => a[k], o)[last] = v;
+    };
+
+    // isi struktur lengkap sesuai skema, memakai nilai yang ada bila cocok
+    function fill(spec, val) {
+      switch (spec.type) {
+        case "number": {
+          const n = parseFloat(val);
+          return isNaN(n) ? (spec.def ?? 0) : n;
+        }
+        case "tuple": return spec.fields.map((f, i) => fill(f, Array.isArray(val) ? val[i] : undefined));
+        case "object": return Object.fromEntries(spec.fields.map((f) => [f.k, fill(f, val && typeof val === "object" ? val[f.k] : undefined)]));
+        case "list": return Array.isArray(val) ? val.map((v) => fill(spec.of, v)) : [];
+        default: return typeof val === "string" ? val : spec.def != null && val == null ? String(spec.def) : "";
+      }
+    }
+    // bersihkan sebelum disimpan: potong spasi, tombol kosong -> null, baris kosong dibuang
+    function clean(spec, val) {
+      switch (spec.type) {
+        case "number": return typeof val === "number" ? val : 0;
+        case "tuple": {
+          const t = spec.fields.map((f, i) => clean(f, val[i]));
+          return t.every((x) => x === "") ? null : t;
+        }
+        case "object": return Object.fromEntries(spec.fields.map((f) => [f.k, clean(f, val[f.k])]));
+        case "list": return val.map((v) => clean(spec.of, v)).filter((v) => v !== null && v !== "");
+        default: return String(val || "").trim();
+      }
+    }
+    // cari spesifikasi pada path "a.0.b"
+    function specAt(fields, path) {
+      let cur = { type: "object", fields };
+      for (const seg of path.split(".")) {
+        if (/^\d+$/.test(seg)) cur = cur.type === "list" ? cur.of : cur.fields[+seg];
+        else cur = cur.fields.find((f) => f.k === seg);
+      }
+      return cur;
+    }
+    const docOf = (k) => DOCS.find((d) => d.key === k);
+
+    // ----- daftar bagian -----
+    async function loadSite() {
+      $("#list").innerHTML = '<div class="empty">Memuat…</div>';
+      try {
+        const r = await api("GET", "/rest/v1/site_content?select=key,value,updated_at");
+        siteRows = Object.fromEntries(r.map((x) => [x.key, x]));
+        renderSite();
+      } catch (e) {
+        $("#list").innerHTML = `<div class="empty">Gagal memuat: ${esc(e.message)}<br>Pastikan 01_setup.sql versi terbaru sudah dijalankan.</div>`;
+      }
+    }
+    function renderSite() {
+      $("#list").innerHTML = `<div class="sbar"><input type="search" id="sq" placeholder="Cari bagian teks…">
+        <button class="btn ghost sm" type="button" data-sb="exp">⬇ Cadangkan teks</button>
+        <button class="btn ghost sm" type="button" data-sb="imp">⬆ Pulihkan dari berkas</button>
+        <input type="file" id="simp" accept=".json,application/json" hidden></div><div id="stbl"></div>`;
+      drawSite();
+    }
+    const GRP = (k) => /^page_/.test(k) ? "Halaman" : /^hero_/.test(k) ? "Hero" : ["theme", "ui", "brand", "menu", "footer", "login"].includes(k) ? "Umum & tampilan" : ["peta", "pins"].includes(k) ? "Peta" : "Konten";
+    let siteGrp = "";
+    function drawSite() {
+      const q = ($("#sq") ? $("#sq").value : "").trim().toLowerCase();
+      const groups = ["", ...new Set(DOCS.map((d) => GRP(d.key)))];
+      const ds = DOCS.filter((d) => (!q || (d.label + " " + d.desc).toLowerCase().includes(q)) && (!siteGrp || GRP(d.key) === siteGrp));
+      const chips = `<div class="chips">${groups.map((g) => `<button type="button" class="chip${g === siteGrp ? " on" : ""}" data-grp="${esc(g)}">${esc(g || "Semua")} ${g ? DOCS.filter((d) => GRP(d.key) === g).length : DOCS.length}</button>`).join("")}</div>`;
+      $("#stbl").innerHTML = chips + (ds.length ? `<table>
+        <thead><tr><th>Bagian</th><th>Status</th><th></th></tr></thead>
+        <tbody>${ds.map((d) => {
+          const row = siteRows[d.key];
+          return `<tr>
+            <td><div class="t1">${esc(d.label)}</div><div class="t2">${esc(d.desc)}</div></td>
+            <td><span class="pill ${row ? "on" : "off"}">${row ? "Tersimpan · " + esc(ago(row.updated_at)) : "Belum ada (memakai bawaan)"}</span></td>
+            <td class="act"><button class="btn ghost sm" type="button" data-doc="${d.key}">Ubah</button></td>
+          </tr>`;
+        }).join("")}</tbody></table>` : '<div class="empty">Tidak ada bagian yang cocok.</div>');
+    }
+    $("#list").addEventListener("click", (e) => { const c = e.target.closest("[data-grp]"); if (c) { siteGrp = c.dataset.grp; drawSite(); } });
+    $("#list").addEventListener("input", (e) => { if (e.target.id === "sq") drawSite(); });
+    $("#list").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-sb]");
+      if (!b) return;
+      if (b.dataset.sb === "exp") { download(`kkmp-teks-situs-${today()}.json`, JSON.stringify({ site_content: siteBackup() }, null, 2), "application/json"); toast("Cadangan diunduh"); }
+      if (b.dataset.sb === "imp") $("#simp").click();
+    });
+    $("#list").addEventListener("change", async (e) => {
+      if (e.target.id !== "simp" || !e.target.files[0]) return;
+      try {
+        const j = JSON.parse(await e.target.files[0].text());
+        const arr = Array.isArray(j) ? j : j.site_content;
+        const ok = new Set(DOCS.map((d) => d.key));
+        const use = (arr || []).filter((x) => x && ok.has(x.key) && x.value && typeof x.value === "object").map((x) => ({ key: x.key, value: x.value }));
+        if (!use.length) throw new Error("Berkas tidak berisi bagian teks yang dikenali.");
+        if (!confirm(`Pulihkan ${use.length} bagian? Isi yang sekarang akan ditimpa.`)) return;
+        await api("POST", "/rest/v1/site_content?on_conflict=key", use, { Prefer: "resolution=merge-duplicates,return=representation" });
+        toast("Teks situs dipulihkan");
+        await loadSite();
+      } catch (err) { toast(err.message, true); }
+      e.target.value = "";
+    });
+
+    // ----- penyaji formulir -----
+    function edit(spec, val, path) {
+      const label = spec.label ? `<label>${esc(spec.label)}</label>` : "";
+      const help = spec.help ? `<small>${esc(spec.help)}</small>` : "";
+      const p = esc(path);
+      switch (spec.type) {
+        case "text":
+        case "link":
+          return `<div class="fld">${label}<input type="text" data-p="${p}" value="${esc(val)}"${spec.ph ? ` placeholder="${esc(spec.ph)}"` : ""}${spec.type === "link" ? ' list="dl_pages"' : ""}>${help}</div>`;
+        case "textarea":
+          return `<div class="fld">${label}<textarea data-p="${p}">${esc(val)}</textarea>${help}</div>`;
+        case "number":
+          return `<div class="fld">${label}<input type="number" step="any" data-p="${p}" value="${esc(val)}">${help}</div>`;
+        case "select":
+          return `<div class="fld">${label}<select data-p="${p}">${spec.options.map((o) => `<option value="${esc(o[0])}"${o[0] === val ? " selected" : ""}>${esc(o[1])}</option>`).join("")}</select>${help}</div>`;
+        case "color":
+          return `<div class="fld">${label}<input type="color" data-p="${p}" value="${esc(val || spec.def || "#000000")}" style="width:64px;height:38px;padding:2px">${help}</div>`;
+        case "image":
+          return `<div class="fld imgf">${label}
+            <div class="pv" data-pv="${p}">${val ? `<img src="${esc(val)}" alt="">` : ""}</div>
+            <div class="row">
+              <input type="file" data-fp="${p}" accept="image/*">
+              <button class="btn ghost sm" type="button" data-la="clrimg" data-p="${p}">Hapus gambar</button>
+              <span class="st" data-st="${p}"></span>
+            </div>
+            <input type="text" data-p="${p}" value="${esc(val)}" placeholder="…atau tempel alamat gambar https://…">${help}</div>`;
+        case "tuple":
+          return `<div class="fld">${label}<div class="tup">${spec.fields.map((f, i) => edit(f, val[i], path + "." + i)).join("")}</div>${help}</div>`;
+        case "object":
+          return `<fieldset class="obj">${spec.label ? `<legend>${esc(spec.label)}</legend>` : ""}${spec.fields.map((f) => edit(f, val[f.k], path ? path + "." + f.k : f.k)).join("")}${help}</fieldset>`;
+        case "list":
+          return `<div class="fld lst">${label}${spec.map ? '<div class="pinmap" id="pinmap"></div><small>Klik “Atur di peta” pada sebuah pin, lalu klik lokasinya di peta di atas.</small>' : ""}
+            ${val.map((v, i) => `<div class="li" data-li="${p}.${i}">
+              <div class="lh"><b>${esc(spec.itemLabel || "Item")} ${i + 1}</b><span>
+                ${spec.map ? `<button class="btn ghost sm" type="button" data-la="pin" data-p="${p}" data-i="${i}">Atur di peta</button>` : ""}
+                <button class="btn ghost sm" type="button" data-la="up" data-p="${p}" data-i="${i}" aria-label="Naik">↑</button>
+                <button class="btn ghost sm" type="button" data-la="down" data-p="${p}" data-i="${i}" aria-label="Turun">↓</button>
+                <button class="btn danger sm" type="button" data-la="del" data-p="${p}" data-i="${i}">Hapus</button>
+              </span></div>
+              ${edit({ ...spec.of, label: "" }, v, path + "." + i)}
+            </div>`).join("")}
+            <button class="btn ghost sm" type="button" data-la="add" data-p="${p}">+ ${esc(spec.add || "Tambah")}</button>${help}</div>`;
+      }
+      return "";
+    }
+
+    function renderDoc(keepScroll) {
+      const d = docOf(dkey);
+      const m = $("#dform");
+      const top = keepScroll ? m.scrollTop : 0;
+      m.innerHTML =
+        `<h2>${esc(d.label)}</h2>` +
+        (siteRows[d.key] ? "" : `<div class="msg warn">Bagian ini belum ada di database, jadi formulir masih kosong. Jalankan <b>03_seed_situs.sql</b> agar terisi teks bawaan. Jika disimpan sekarang, hanya isian di bawah yang dipakai.</div>`) +
+        `<div class="msg err" id="derr" hidden></div>` +
+        d.fields.map((f) => edit(f, dstate[f.k], f.k)).join("") +
+        `<div class="foot">
+          <button class="btn ghost" type="button" data-la="close">Batal</button>
+          <button class="btn" type="submit" id="dsave">Simpan</button>
+        </div>`;
+      m.scrollTop = top;
+      drawPins();
+    }
+
+    function openDoc(key) {
+      const d = docOf(key);
+      dkey = key;
+      const val = siteRows[key] ? siteRows[key].value : {};
+      dstate = Object.fromEntries(d.fields.map((f) => [f.k, fill(f, val && val[f.k])]));
+      activePin = 0;
+      renderDoc(false);
+      docDirty = false;
+      $("#dov").hidden = false;
+    }
+    const closeDoc = (force) => {
+      if (docDirty && !force && !confirm("Perubahan belum disimpan. Tutup tanpa menyimpan?")) return;
+      $("#dov").hidden = true;
+      dkey = null;
+      docDirty = false;
+    };
+
+    // ----- peta pin -----
+    function drawPins() {
+      const pm = $("#pinmap");
+      if (!pm || !dstate.pins) return;
+      pm.innerHTML = dstate.pins
+        .map((p, i) => `<span class="dot k-${esc(p.kind)}${i === activePin ? " act" : ""}" data-dot="${i}" style="left:${Number(p.x) || 0}%;top:${Number(p.y) || 0}%" title="${esc(p.name)}">${i + 1}</span>`)
+        .join("");
+      $$all(".li").forEach((li) => li.classList.toggle("act", li.dataset.li === "pins." + activePin));
+    }
+    const $$all = (s) => [...document.querySelectorAll(s)];
+
+    // ----- peristiwa formulir -----
+    $("#dform").addEventListener("input", (e) => {
+      const p = e.target.dataset && e.target.dataset.p;
+      if (!p) return;
+      docDirty = true;
+      let v = e.target.value;
+      if (e.target.type === "number") v = parseFloat(v) || 0;
+      setP(dstate, p, v);
+      if (/^pins\./.test(p)) drawPins();
+      if (e.target.type === "text" && e.target.closest(".imgf")) {
+        const pv = document.querySelector(`[data-pv="${CSS.escape(p)}"]`);
+        if (pv) pv.innerHTML = /^https?:\/\//i.test(v) ? `<img src="${esc(v)}" alt="">` : "";
+      }
+    });
+
+    $("#dform").addEventListener("click", (e) => {
+      const pm = e.target.closest("#pinmap");
+      if (pm) {
+        const dot = e.target.closest("[data-dot]");
+        if (dot) {
+          activePin = +dot.dataset.dot;
+          return drawPins();
+        }
+        const r = pm.getBoundingClientRect();
+        const pin = dstate.pins[activePin];
+        if (!pin) return;
+        docDirty = true;
+        pin.x = Math.max(0, Math.min(100, Math.round(((e.clientX - r.left) / r.width) * 100)));
+        pin.y = Math.max(0, Math.min(100, Math.round(((e.clientY - r.top) / r.height) * 100)));
+        const ix = document.querySelector(`[data-p="pins.${activePin}.x"]`);
+        const iy = document.querySelector(`[data-p="pins.${activePin}.y"]`);
+        if (ix) ix.value = pin.x;
+        if (iy) iy.value = pin.y;
+        return drawPins();
+      }
+      const b = e.target.closest("[data-la]");
+      if (!b) return;
+      const a = b.dataset.la;
+      if (a === "close") return closeDoc();
+      const p = b.dataset.p;
+      const i = +b.dataset.i;
+      if (a === "clrimg") {
+        docDirty = true;
+        setP(dstate, p, "");
+        return renderDoc(true);
+      }
+      docDirty = true;
+      const arr = getP(dstate, p);
+      const d = docOf(dkey);
+      if (a === "add") arr.push(fill(specAt(d.fields, p).of, undefined));
+      if (a === "del") {
+        if (!confirm("Hapus item ini?")) return;
+        arr.splice(i, 1);
+        if (p === "pins") activePin = Math.max(0, Math.min(activePin, arr.length - 1));
+      }
+      if (a === "up" && i > 0) {
+        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+        if (p === "pins") activePin = i - 1;
+      }
+      if (a === "down" && i < arr.length - 1) {
+        [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+        if (p === "pins") activePin = i + 1;
+      }
+      if (a === "pin") activePin = i;
+      renderDoc(true);
+    });
+
+    // unggah gambar di dalam formulir bagian situs
+    $("#dform").addEventListener("change", async (e) => {
+      const p = e.target.dataset && e.target.dataset.fp;
+      if (!p || !e.target.files[0]) return;
+      const file = e.target.files[0];
+      const st = document.querySelector(`[data-st="${CSS.escape(p)}"]`);
+      const save = $("#dsave");
+      save.disabled = true;
+      try {
+        st.textContent = "Memproses gambar…";
+        const blob = await compress(file);
+        if (blob.size > 5 * 1024 * 1024) throw new Error("Ukuran gambar terlalu besar (maks. 5 MB).");
+        st.textContent = "Mengunggah…";
+        const url = await upload("situs", blob, file.name);
+        docDirty = true;
+        setP(dstate, p, url);
+        document.querySelector(`[data-p="${CSS.escape(p)}"]`).value = url;
+        document.querySelector(`[data-pv="${CSS.escape(p)}"]`).innerHTML = `<img src="${esc(url)}" alt="">`;
+        st.textContent = "Selesai ✓";
+      } catch (err) {
+        st.textContent = "Gagal: " + err.message;
+      } finally {
+        save.disabled = false;
+        e.target.value = "";
+      }
+    });
+
+    $("#dform").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = docOf(dkey);
+      const value = Object.fromEntries(d.fields.map((f) => [f.k, clean(f, dstate[f.k])]));
+      const btn = $("#dsave");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan…";
+      try {
+        await api("POST", "/rest/v1/site_content?on_conflict=key", { key: dkey, value }, { Prefer: "resolution=merge-duplicates,return=representation" });
+        closeDoc(true);
+        toast("Tersimpan", false, { label: "Pratinjau", fn: openPreview });
+        await loadSite();
+      } catch (err) {
+        const box = $("#derr");
+        box.hidden = false;
+        box.textContent = err.message;
+        box.scrollIntoView({ block: "nearest" });
+        btn.disabled = false;
+        btn.textContent = "Simpan";
+      }
+    });
+    $("#dov").addEventListener("mousedown", (e) => {
+      if (e.target.id === "dov") closeDoc();
+    });
+    $("#list").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-doc]");
+      if (b) openDoc(b.dataset.doc);
+    });
+
+    // ==================================================================
+    // Toast & mulai
+    // ==================================================================
+    let tt;
+    function toast(msg, isErr, act) {
+      const t = $("#toast");
+      t.className = "toast" + (isErr ? " err" : "");
+      t.textContent = msg;
+      if (act) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = act.label;
+        b.onclick = () => { t.hidden = true; act.fn(); };
+        t.append(b);
+      }
+      t.hidden = false;
+      clearTimeout(tt);
+      tt = setTimeout(() => (t.hidden = true), act ? 8000 : 2800);
+    }
+
+
+    // ==================================================================
+    // v3: tema, pratinjau, palet perintah, lipat bagian, status koneksi
+    // ==================================================================
+    function applyTheme(d) { document.documentElement.classList.toggle("dark", d); try { localStorage.setItem("kkmp_theme", d ? "dark" : "light"); } catch (e) {} }
+    function toggleTheme() { applyTheme(!document.documentElement.classList.contains("dark")); }
+    (function () { let t = null; try { t = localStorage.getItem("kkmp_theme"); } catch (e) {} applyTheme(t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches); })();
+    $("#thbtn").addEventListener("click", toggleTheme);
+
+    function openPreview() { $("#pvw").hidden = false; $("#pvf").src = "index.html?v=" + Date.now(); }
+    $("#pvbtn").addEventListener("click", openPreview);
+    $("#pvr").addEventListener("click", () => ($("#pvf").src = "index.html?v=" + Date.now()));
+    $("#pvx").addEventListener("click", () => { $("#pvw").hidden = true; $("#pvf").src = "about:blank"; });
+    $("#pvw").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-w]");
+      if (!b) return;
+      $("#pvf").style.width = b.dataset.w;
+      $("#pvw").querySelectorAll("[data-w]").forEach((x) => x.classList.toggle("on", x === b));
+    });
+
+    let palIdx = 0, palList = [];
+    function palItems() {
+      const c = [["🏠 Ringkasan", "pindah", () => go("dash")], ["🏪 Toko & Kasir (staf, stok, omzet)", "pindah", () => go("store")]];
+      Object.entries(TABLES).forEach(([k, T]) => {
+        c.push([T.label + ": buka daftar", "pindah", () => go(k)], ["+ Tambah " + T.single, "aksi", () => go(k, null, "1")]);
+        (all[k] || []).forEach((r) => c.push(["Ubah " + T.single + ": " + T.title(r), T.single, () => go(k, r.id)]));
+      });
+      DOCS.forEach((d) => c.push(["Teks situs: " + d.label, GRP(d.key), () => go("site", d.key)]));
+      c.push(["👁 Pratinjau website", "aksi", openPreview], ["🌓 Ganti tema gelap/terang", "aksi", toggleTheme], ["↻ Muat ulang data", "aksi", () => loadRows()], ["Keluar", "aksi", () => $("#logout").click()]);
+      return c;
+    }
+    function palDraw() {
+      const q = $("#pin").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      palList = palItems().filter(([t, g]) => q.every((w) => (t + " " + g).toLowerCase().includes(w))).slice(0, 12);
+      palIdx = Math.min(palIdx, Math.max(0, palList.length - 1));
+      $("#pls").innerHTML = palList.length ? palList.map(([t, g], i) => `<li class="${i === palIdx ? "on" : ""}"><button type="button" data-pi="${i}"><span>${esc(t)}</span><small>${esc(g)}</small></button></li>`).join("") : '<li class="none">Tidak ada hasil.</li>';
+      const on = $("#pls .on"); if (on) on.scrollIntoView({ block: "nearest" });
+    }
+    function palOpen() { if ($("#panel").hidden) return; $("#pal").hidden = false; $("#pin").value = ""; palIdx = 0; palDraw(); $("#pin").focus(); }
+    const palClose = () => ($("#pal").hidden = true);
+    function palRun(i) { const it = palList[i]; if (!it) return; palClose(); it[2](); }
+    $("#palbtn").addEventListener("click", palOpen);
+    $("#pin").addEventListener("input", () => { palIdx = 0; palDraw(); });
+    $("#pin").addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); palIdx = (palIdx + 1) % Math.max(1, palList.length); palDraw(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); palIdx = (palIdx - 1 + palList.length) % Math.max(1, palList.length); palDraw(); }
+      else if (e.key === "Enter") { e.preventDefault(); palRun(palIdx); }
+    });
+    $("#pls").addEventListener("click", (e) => { const b = e.target.closest("[data-pi]"); if (b) palRun(+b.dataset.pi); });
+    $("#pal").addEventListener("mousedown", (e) => { if (e.target.id === "pal") palClose(); });
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#pal").hidden ? palOpen() : palClose(); }
+      else if (e.key === "Escape") {
+        if (!$("#pal").hidden) { palClose(); e.stopImmediatePropagation(); }
+        else if (!$("#pvw").hidden) $("#pvx").click();
+      }
+    }, true);
+
+    // lipat / buka kelompok isian di editor teks
+    $("#dform").addEventListener("click", (e) => { const l = e.target.closest("legend"); if (l) l.parentElement.classList.toggle("cl"); });
+
+    window.addEventListener("offline", () => toast("Anda sedang offline. Perubahan belum dapat disimpan.", true));
+    window.addEventListener("online", () => toast("Kembali online"));
+
+
+    // ==================================================================
+    // Toko & Kasir: staf toko mitra, ringkasan omzet, stok semua toko
+    // ==================================================================
+    let ST = null, stTab = "toko", stSel = "", stLow = false;
+    const rpA = (n) => "Rp" + Math.round(+n || 0).toLocaleString("id-ID");
+    const qfA = (n) => (+n).toLocaleString("id-ID", { maximumFractionDigits: 3 });
+    async function loadStore() {
+      $("#list").innerHTML = '<div class="empty">Memuat…</div>';
+      const since = new Date(Date.now() - 30 * 864e5).toISOString();
+      try {
+        const [pt, staff, pr, sa] = await Promise.all([
+          api("GET", "/rest/v1/partners?select=id,name,category,is_active&order=name"),
+          api("GET", "/rest/v1/partner_staff?select=*&order=email"),
+          api("GET", "/rest/v1/store_products?select=id,partner_id,name,category,unit,sell_price,stock,min_stock,is_active,show_public&order=name&limit=5000"),
+          api("GET", `/rest/v1/store_sales?select=partner_id,total,created_at,store_sale_items(qty,price,cost)&created_at=gte.${since}&voided_at=is.null&limit=10000`)
+        ]);
+        ST = { pt, staff, pr, sa };
+        drawStore();
+      } catch (e) {
+        $("#list").innerHTML = `<div class="empty">Gagal memuat: ${esc(e.message)}<br>Pastikan 05_portal_mitra.sql dan 06_katalog_publik.sql sudah dijalankan.</div>`;
+      }
+    }
+    function stAgg() {
+      const w = Date.now() - 7 * 864e5, m = {};
+      ST.pt.forEach((p) => (m[p.id] = { p, staff: [], n: 0, low: 0, o7: 0, o30: 0, trx: 0, laba: 0 }));
+      ST.staff.forEach((x) => m[x.partner_id] && m[x.partner_id].staff.push(x));
+      ST.pr.forEach((x) => { const a = m[x.partner_id]; if (!a) return; a.n++; if (x.is_active && +x.stock <= +x.min_stock) a.low++; });
+      ST.sa.forEach((x) => { const a = m[x.partner_id]; if (!a) return; a.o30 += +x.total; a.trx++; if (new Date(x.created_at) > w) a.o7 += +x.total; x.store_sale_items.forEach((i) => (a.laba += (i.price - i.cost) * i.qty)); });
+      return Object.values(m);
+    }
+    function drawStore() {
+      const A = stAgg(), nm = (id) => (ST.pt.find((p) => p.id === id) || {}).name || "#" + id;
+      const tabs = [["toko", "Ringkasan toko"], ["staf", `Staf toko ${ST.staff.length}`], ["stok", `Produk & stok ${ST.pr.length}`]];
+      const kp = [["Toko dengan staf", A.filter((a) => a.staff.length).length + " / " + A.length], ["Omzet 30 hari", rpA(A.reduce((s, a) => s + a.o30, 0))], ["Transaksi 30 hari", A.reduce((s, a) => s + a.trx, 0)], ["Produk perlu restok", A.reduce((s, a) => s + a.low, 0)]];
+      let body = "";
+      if (stTab === "toko") {
+        body = A.length ? `<table><thead><tr><th>Mitra</th><th>Staf</th><th>Produk</th><th>Omzet 7 hari</th><th>Omzet 30 hari</th><th>Laba kotor 30 hari</th><th></th></tr></thead><tbody>${A.map((a) => `<tr>
+          <td><div class="t1">${esc(a.p.name)}</div><div class="t2">${esc(a.p.category)}${a.p.is_active ? "" : " · tersembunyi di website"}</div></td>
+          <td>${a.staff.length ? a.staff.length : '<span class="pill off">Belum ada</span>'}</td>
+          <td>${a.n}${a.low ? ` <span class="pill off" style="background:#fff0cf;color:#b26a00">${a.low} restok</span>` : ""}</td>
+          <td>${rpA(a.o7)}</td><td>${rpA(a.o30)}<div class="t2">${a.trx} transaksi</div></td><td>${rpA(a.laba)}</td>
+          <td class="act"><a class="btn ghost sm" href="mitra.html?toko=${a.p.id}" target="_blank" rel="noopener">Buka kasir ➜</a> <button class="btn ghost sm" type="button" data-sadd="${a.p.id}">+ Staf</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Belum ada mitra. Tambahkan dulu di tab Mitra.</div>';
+      } else if (stTab === "staf") {
+        body = `<form class="sbar" id="stf" style="flex-wrap:wrap;gap:8px"><input type="email" id="stm" placeholder="Email akun (sudah dibuat di Authentication)" required style="flex:2;min-width:220px" aria-label="Email staf">
+          <select id="stp" required aria-label="Mitra">${ST.pt.map((p) => `<option value="${p.id}"${String(p.id) === String(stSel) ? " selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
+          <select id="str" aria-label="Peran"><option value="owner">Pemilik / pengelola</option><option value="kasir">Kasir</option></select>
+          <button class="btn sm" type="submit">+ Daftarkan</button></form>
+          <p class="t2" style="padding:0 12px 10px">Akun login dibuat dulu di Supabase &gt; Authentication &gt; Users. Pemilik mengelola stok, harga, laporan, dan pembatalan. Kasir hanya kasir dan riwayat.</p>
+          ${ST.staff.length ? `<table><thead><tr><th>Email</th><th>Mitra</th><th>Peran</th><th></th></tr></thead><tbody>${ST.staff.map((x) => `<tr><td><div class="t1">${esc(x.email)}</div></td><td>${esc(nm(x.partner_id))}</td>
+            <td><select data-srole="${esc(x.email)}|${x.partner_id}" aria-label="Peran"><option value="owner"${x.role === "owner" ? " selected" : ""}>Pemilik</option><option value="kasir"${x.role === "kasir" ? " selected" : ""}>Kasir</option></select></td>
+            <td class="act"><button class="btn danger sm" type="button" data-sdel="${esc(x.email)}|${x.partner_id}">Cabut akses</button></td></tr>`).join("")}</tbody></table>` : '<div class="empty">Belum ada staf terdaftar.</div>'}`;
+      } else {
+        const q = ($("#stq") ? $("#stq").value : "").trim().toLowerCase();
+        const L = ST.pr.filter((x) => (!stSel || String(x.partner_id) === String(stSel)) && (!stLow || (x.is_active && +x.stock <= +x.min_stock)) && (!q || (x.name + " " + x.category).toLowerCase().includes(q)));
+        body = `<div class="sbar"><input type="search" id="stq" placeholder="Cari produk…" value="${esc(q)}"><select id="stf2" aria-label="Mitra"><option value="">Semua toko</option>${ST.pt.map((p) => `<option value="${p.id}"${String(p.id) === String(stSel) ? " selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
+          <button class="btn ghost sm${stLow ? " on" : ""}" type="button" data-slow="1">${stLow ? "✓ " : ""}Perlu restok saja</button></div>
+          ${L.length ? `<table><thead><tr><th>Produk</th><th>Mitra</th><th>Harga jual</th><th>Stok</th><th>Di website</th></tr></thead><tbody>${L.slice(0, 300).map((x) => { const z = +x.stock <= 0, lo = +x.stock <= +x.min_stock; return `<tr><td><div class="t1">${esc(x.name)}</div><div class="t2">${esc(x.category)}</div></td><td>${esc(nm(x.partner_id))}</td><td>${rpA(x.sell_price)}</td>
+            <td><span class="pill" style="${z ? "background:#fdecea;color:#b3261e" : lo ? "background:#fff0cf;color:#b26a00" : "background:#e3f3e6;color:#1f7a3a"}">${qfA(x.stock)} ${esc(x.unit || "")}</span></td><td>${x.is_active && x.show_public ? "Ya" : '<span class="t2">Tidak</span>'}</td></tr>`; }).join("")}</tbody></table>${L.length > 300 ? `<div class="t2" style="padding:10px 12px">Menampilkan 300 dari ${L.length}. Persempit dengan pencarian.</div>` : ""}` : '<div class="empty">Tidak ada produk.</div>'}
+          <p class="t2" style="padding:10px 12px">Harga dan stok diubah oleh pengelola toko lewat aplikasi kasir. Data ini tampil otomatis di Katalog Produk website.</p>`;
+      }
+      const keep = document.activeElement && document.activeElement.id === "stq";
+      $("#list").innerHTML = `<div class="kp" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:12px">${kp.map(([l, v]) => `<div class="stat" style="padding:12px 14px"><div class="t2">${l}</div><div class="sn" style="font-size:20px">${v}</div></div>`).join("")}</div>
+        <div class="chips">${tabs.map(([k, l]) => `<button type="button" class="chip${k === stTab ? " on" : ""}" data-st="${k}">${l}</button>`).join("")}</div>${body}`;
+      if (keep) { const i = $("#stq"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+    }
+    $("#list").addEventListener("click", async (e) => {
+      if (cur !== "store" || !ST) return;
+      let b;
+      if ((b = e.target.closest("[data-st]"))) { stTab = b.dataset.st; drawStore(); }
+      else if ((b = e.target.closest("[data-sadd]"))) { stSel = b.dataset.sadd; stTab = "staf"; drawStore(); const i = $("#stm"); i && i.focus(); }
+      else if (e.target.closest("[data-slow]")) { stLow = !stLow; drawStore(); }
+      else if ((b = e.target.closest("[data-sdel]"))) {
+        const [em, pid] = b.dataset.sdel.split("|");
+        if (!confirm(`Cabut akses ${em} dari toko ini? Akun login-nya tidak dihapus.`)) return;
+        try { await api("DELETE", `/rest/v1/partner_staff?email=eq.${encodeURIComponent(em)}&partner_id=eq.${pid}`); ST.staff = ST.staff.filter((x) => !(x.email === em && String(x.partner_id) === pid)); toast("Akses dicabut"); drawStore(); }
+        catch (er) { toast(er.message, true); }
+      }
+    });
+    $("#list").addEventListener("change", async (e) => {
+      if (cur !== "store" || !ST) return;
+      if (e.target.id === "stf2") { stSel = e.target.value; drawStore(); }
+      const k = e.target.dataset && e.target.dataset.srole;
+      if (k) {
+        const [em, pid] = k.split("|");
+        try { await api("PATCH", `/rest/v1/partner_staff?email=eq.${encodeURIComponent(em)}&partner_id=eq.${pid}`, { role: e.target.value }); ST.staff.forEach((x) => { if (x.email === em && String(x.partner_id) === pid) x.role = e.target.value; }); toast("Peran diperbarui"); }
+        catch (er) { toast(er.message, true); drawStore(); }
+      }
+    });
+    $("#list").addEventListener("input", (e) => { if (cur === "store" && e.target.id === "stq") drawStore(); });
+    $("#list").addEventListener("submit", async (e) => {
+      if (e.target.id !== "stf") return;
+      e.preventDefault();
+      const email = $("#stm").value.trim().toLowerCase(), partner_id = +$("#stp").value, role = $("#str").value;
+      try {
+        const r = await api("POST", "/rest/v1/partner_staff", { email, partner_id, role });
+        ST.staff.push(r[0]); stSel = partner_id; toast("Staf didaftarkan. Beri tahu mereka untuk masuk lewat tombol Masuk di website.");
+        drawStore();
+      } catch (er) { toast(/duplicate|23505/.test(er.message) ? "Email itu sudah terdaftar di toko tersebut." : er.message, true); }
+    });
+
+    (async function init() {
+      session = readSession();
+      if (!BASE || !KEY || !session) return showLogin();
+      try {
+        const ok = await api("POST", "/rest/v1/rpc/is_admin", {});
+        if (ok !== true) throw new Error("Akun ini bukan admin.");
+        await showPanel();
+      } catch (e) {
+        writeSession(null);
+        showLogin();
+      }
+    })();
+  </script>
+</body>
+</html>

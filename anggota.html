@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<!--
+  PORTAL KOPERASI KKMP JELUPANG - anggota, pengurus, pengawas (satu halaman, tampilan menyesuaikan peran).
+  Buka lewat  alamat-website/anggota.html  (atau tombol Masuk di website).
+  Memakai config.js dan akun Supabase yang sama dengan website. Jalankan 09_portal_koperasi.sql dulu.
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#632B2B">
+  <title>Portal Koperasi KKMP Jelupang</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --red: #B84435; --mar: #632B2B; --yel: #F6EB60; --ink: #272227; --mut: #6d6368; --line: #e6dfd8; --bg: #FFF9F0; --card: #fff; --ok: #1f7a3a; --warn: #b26a00; --bad: #b3261e; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    body { font: 14px/1.5 Poppins, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--ink); padding-bottom: env(safe-area-inset-bottom); }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--yel); outline-offset: 2px; box-shadow: 0 0 0 5px var(--mar); }
+    .mut { color: var(--mut); font-size: 12.5px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--red); color: #fff; font-weight: 600; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+    .btn.danger { background: var(--card); color: var(--bad); border: 1px solid #e8b9b5; }
+    .btn.sm { padding: 5px 11px; font-size: 12.5px; border-radius: 8px; }
+    .fld { margin-bottom: 12px; }
+    .fld label { display: block; font-weight: 600; font-size: 12.5px; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #d9d0c8; border-radius: 10px; background: #fff; }
+    .msg { padding: 9px 12px; border-radius: 9px; font-size: 13px; margin-bottom: 12px; background: #fdecea; color: #8a1c14; border: 1px solid #f3c1bc; }
+    .login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+    .box { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; box-shadow: 0 10px 30px rgba(99, 43, 43, .08); }
+    .box h1 { font-size: 20px; color: var(--mar); }
+    .box p.mut { margin: 4px 0 18px; }
+    .box .btn { width: 100%; }
+    .tw { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    th { background: #faf4ec; font-size: 12px; color: var(--mut); }
+    td.r, th.r { text-align: right; }
+    .in { color: var(--ok); font-weight: 600; } .out { color: var(--bad); font-weight: 600; } .late { color: var(--bad); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+    .card summary { cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .card .tw { margin-top: 10px; } .card p { margin-top: 8px; }
+    .card pre { white-space: pre-wrap; font: inherit; margin-top: 8px; }
+    .chip { margin-left: auto; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 10px; background: #eee; }
+    .c-berjalan, .c-ditanggapi, .c-perhatian { background: #fff1d6; color: var(--warn); }
+    .c-lunas, .c-selesai, .c-aktif { background: #dff3e4; color: var(--ok); }
+    .c-ditolak, .c-temuan, .c-terbuka { background: #fdecea; color: var(--bad); }
+    .c-dibatalkan, .c-keluar, .c-meninggal { background: #eee; color: #555; }
+    .c-calon, .c-diajukan { background: #fff1d6; color: var(--warn); }
+    .c-disetujui { background: #dff3e4; color: var(--ok); }
+    .c-dibekukan, .c-diberhentikan { background: #fdecea; color: var(--bad); }
+    .msg.ok { background: #e7f6ec; color: #17612f; border-color: #b9e2c6; }
+    .box.wide { max-width: 560px; } .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .chk { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; font-size: 13px; } .chk input { width: auto; margin-top: 3px; }
+    .box a { color: var(--red); font-weight: 600; }
+    .act { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .empty { padding: 28px; text-align: center; color: var(--mut); background: var(--card); border: 1px dashed var(--line); border-radius: 12px; }
+    dialog::backdrop { background: rgba(39, 34, 39, .5); }
+    dialog h3 { color: var(--mar); margin-bottom: 14px; }
+    #toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 18px; border-radius: 999px; font-size: 13px; z-index: 50; }
+      .shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+    .side { position: sticky; top: 0; height: 100vh; background: var(--mar); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 3px; overflow: auto; }
+    .brand { font-weight: 700; font-size: 15px; line-height: 1.3; padding: 4px 10px 12px; }
+    .side h6 { font-size: 11.5px; font-weight: 600; opacity: .65; margin: 14px 10px 4px; }
+    .side button { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: none; color: #f3e3e0; font-weight: 500; text-align: left; }
+    .side button:hover { background: rgba(255, 255, 255, .1); }
+    .side button.on { background: var(--yel); color: var(--mar); font-weight: 700; }
+    .nb { margin-left: auto; font-style: normal; background: var(--red); color: #fff; border-radius: 99px; font-size: 11px; padding: 0 7px; }
+    .main { min-width: 0; }
+    .top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top)); background: rgba(255, 249, 240, .94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+    .top h1 { font-size: 18px; color: var(--mar); }
+    .top .sp { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .av { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--mar); color: var(--yel); font-weight: 700; flex: none; }
+    .av.big { width: 64px; height: 64px; font-size: 26px; }
+    .role { background: var(--yel); color: var(--mar); font-weight: 700; font-size: 12px; border-radius: 999px; padding: 2px 11px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .bar h2, .hero h2 { font-size: 20px; color: var(--mar); }
+    .hero { margin-bottom: 16px; } .hero p { color: var(--mut); }
+    .kps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .kp { text-align: left; background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--mar); border-radius: 12px; padding: 12px 14px; }
+    button.kp:hover { border-color: var(--red); }
+    .kp.warn { border-left-color: var(--warn); } .kp.bad { border-left-color: var(--bad); }
+    .kp span { display: block; font-size: 12px; color: var(--mut); }
+    .kp b { font-size: 19px; color: var(--mar); font-variant-numeric: tabular-nums; }
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .cols .panel { margin: 0; }
+    .panel h3, h3.sec { font-size: 14px; color: var(--mar); margin-bottom: 10px; }
+    h3.sec { margin: 18px 0 8px; } h4 { font-size: 13px; margin: 14px 0 6px; color: var(--mar); }
+    .comp { display: flex; height: 16px; border-radius: 99px; overflow: hidden; background: #eee; }
+    .lg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12.5px; }
+    .lg b { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+    .prog { height: 10px; border-radius: 99px; background: #eee; margin: 8px 0; overflow: hidden; } .prog i { display: block; height: 100%; background: var(--ok); }
+    .bars { display: flex; gap: 8px; height: 150px; }
+    .bars > div { flex: 1; display: grid; grid-template-rows: auto 1fr auto; text-align: center; font-size: 11px; color: var(--mut); min-width: 0; }
+    .bars .col { display: flex; align-items: flex-end; } .bars i { display: block; width: 100%; background: var(--red); border-radius: 6px 6px 0 0; }
+    .todo { display: flex; justify-content: space-between; width: 100%; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); background: #fffdf7; border-radius: 10px; font-weight: 600; text-align: left; }
+    .todo:hover { border-color: var(--red); }
+    .prof { display: flex; align-items: center; gap: 16px; }
+    .dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 8px 0; } .dl dt { color: var(--mut); font-size: 12.5px; } .dl dd { overflow-wrap: anywhere; }
+    .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .tools input[type=search] { flex: 1 1 220px; width: auto; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; } .tools .chips { margin: 0; }
+    .chip2 { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 14px; font-size: 12.5px; font-weight: 600; }
+    .chip2.on { background: var(--red); border-color: var(--red); color: #fff; }
+    th button { border: 0; background: none; font: inherit; font-weight: 700; color: inherit; padding: 0; }
+    tbody tr[data-a] { cursor: pointer; } tbody tr[data-a]:hover { background: #fffaf0; }
+    tfoot td { font-weight: 700; background: #faf4ec; }
+    .pg { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; flex-wrap: wrap; }
+    .sk { height: 84px; border-radius: 12px; margin-bottom: 12px; background: linear-gradient(90deg, #f0e8df, #faf4ec, #f0e8df) 0 0 / 200% 100%; animation: sh 1.2s infinite; }
+    @keyframes sh { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+    dialog { margin: auto; border: 0; border-radius: 16px; padding: 22px; max-height: 90vh; overflow: auto; width: min(560px, 94vw); }
+    @media (max-width: 860px) {
+      .shell { display: block; }
+      .side { position: fixed; inset: auto 0 0 0; height: auto; z-index: 20; flex-direction: row; gap: 2px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); overflow-x: auto; box-shadow: 0 -4px 18px rgba(0, 0, 0, .18); }
+      .brand, .side h6 { display: none; }
+      .side button { flex: none; width: auto; min-width: 66px; flex-direction: column; gap: 1px; padding: 6px 8px; font-size: 11px; text-align: center; }
+      .nb { position: absolute; top: 0; right: 4px; margin: 0; }
+      .top { padding: 10px 14px; } .top .who, .top .role { display: none; }
+      main { padding: 14px 14px 92px; }
+    }
+    @media print { .side, .top, .tools, .chips, .btn, .pg, .todo { display: none !important; } .shell { display: block; } main { padding: 0; } }
+  </style>
+</head>
+<body>
+  <section class="login" id="login" hidden>
+    <div class="box">
+      <h1>Portal Koperasi KKMP Jelupang</h1>
+      <p class="mut">Untuk anggota, pengurus, dan pengawas. Masuk dengan akun Anda, atau daftar bila belum menjadi anggota.</p>
+      <p class="msg" id="lerr" role="alert" hidden></p>
+      <form id="lform">
+        <div class="fld"><label for="em">Email</label><input id="em" type="email" required autocomplete="username"></div>
+        <div class="fld"><label for="pw">Kata sandi</label><input id="pw" type="password" required autocomplete="current-password"></div>
+        <button class="btn" id="lbtn">Masuk</button>
+      </form>
+      <p class="mut" style="margin-top:14px"><a href="#" id="lreg">Daftar akun baru</a> · <a href="#" id="lforgot">Lupa kata sandi?</a> · <a href="index.html">Kembali ke website</a></p>
+    </div>
+  </section>
+  <section class="login" id="apply" hidden><div class="box wide"></div></section>
+
+  <div id="app" class="shell" hidden>
+    <nav class="side" id="side" aria-label="Menu utama"></nav>
+    <div class="main">
+      <header class="top"><h1 id="pt"></h1>
+        <div class="sp"><span class="av" id="av"></span><b class="who" id="who"></b><span class="role" id="role"></span><button class="btn ghost sm" id="out">Keluar</button></div>
+      </header>
+      <main id="view"></main>
+    </div>
+  </div>
+
+  
+<dialog id="dlg"><h3 id="dt"></h3><form id="df"></form></dialog>
+  <div id="toast" hidden></div>
+
+  <script src="config.js"></script>
+  <script>
+  (() => {
+    const CFG = window.KKMP_CONFIG || {}, BASE = String(CFG.SUPABASE_URL || "").replace(/\/+$/, ""), KEY = CFG.SUPABASE_ANON_KEY || "", SK = "kkmp_session";
+    const $ = (s) => document.querySelector(s);
+    const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const rp = (n) => "Rp" + Math.round(+n || 0).toLocaleString("id-ID");
+    const dd = (v) => (v ? new Date(v).toLocaleDateString("id-ID", { dateStyle: "medium" }) : "-");
+    const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    const ld = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+    let S = ld(SK), me = null, D = {}, view = "ringkas", staff = false, wr = false, pw = false, adm = false, ma = false;
+
+    // ---------- API (pola sama dengan mitra.html) ----------
+    const saveS = (d) => { S = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), email: (d.user && d.user.email) || (S && S.email) || "" }; try { localStorage.setItem(SK, JSON.stringify(S)); } catch (e) {} };
+    const clearS = () => { S = null; try { localStorage.removeItem(SK); } catch (e) {} };
+    async function errMsg(r) { try { const j = await r.json(); return j.message || j.msg || j.error_description || r.statusText; } catch (e) { return r.statusText || "Terjadi kesalahan"; } }
+    async function token() {
+      if (!S) throw new Error("Belum masuk");
+      if (S.expires_at - 60 < Date.now() / 1000) {
+        const r = await fetch(`${BASE}/auth/v1/token?grant_type=refresh_token`, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: S.refresh_token }) });
+        if (!r.ok) { clearS(); showLogin("Sesi berakhir, silakan masuk lagi."); throw new Error("Sesi berakhir"); }
+        saveS(await r.json());
+      }
+      return S.access_token;
+    }
+    async function api(method, path, body) {
+      const t = await token();
+      let r;
+      try { r = await fetch(BASE + path, { method, headers: { apikey: KEY, Authorization: "Bearer " + t, "Content-Type": "application/json", Prefer: "return=representation" }, body: body === undefined ? undefined : JSON.stringify(body) }); }
+      catch (e) { throw new Error("Tidak ada koneksi internet"); }
+      if (!r.ok) throw new Error(await errMsg(r));
+      const x = await r.text();
+      return x ? JSON.parse(x) : null;
+    }
+    const rpc = (n, a) => api("POST", "/rest/v1/rpc/" + n, a);
+    const toast = (m) => { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); };
+
+    // ---------- Masuk ----------
+    function showLogin(m, good) { $("#app").hidden = true; $("#apply").hidden = true; $("#login").hidden = false; const e = $("#lerr"); e.hidden = !m; e.textContent = m || ""; e.classList.toggle("ok", !!good); }
+    $("#lform").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const b = $("#lbtn"); b.disabled = true; b.textContent = "Memeriksa…";
+      try {
+        if (!BASE || !KEY) throw new Error("config.js belum diisi.");
+        const r = await fetch(`${BASE}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email: $("#em").value.trim(), password: $("#pw").value }) });
+        if (!r.ok) throw new Error(r.status === 400 ? "Email atau kata sandi salah." : await errMsg(r));
+        saveS(await r.json()); $("#pw").value = "";
+        await boot();
+      } catch (e) { showLogin(e.message); }
+      finally { b.disabled = false; b.textContent = "Masuk"; }
+    });
+    $("#out").addEventListener("click", () => { clearS(); showLogin(); });
+
+    async function getAll(path) {   // ambil semua halaman (batas bawaan server 1000 baris)
+      let out = [], from = 0;
+      for (;;) {
+        const t = await token(), r = await fetch(BASE + path, { headers: { apikey: KEY, Authorization: "Bearer " + t, "Range-Unit": "items", Range: from + "-" + (from + 999) } });
+        if (r.status === 416) return out;
+        if (!r.ok) throw new Error(await errMsg(r));
+        const a = await r.json(); out = out.concat(a);
+        if (a.length < 1000) return out; from += 1000;
+      }
+    }
+    async function boot() {
+      const a = await rpc("my_access", {});
+      adm = !!a.admin; me = a.coop;
+      if (!me && adm) me = { id: null, peran: "admin", name: (S && S.email) || "Admin", no: "admin" };
+      if (!me) return showApply(a);
+      staff = me.peran !== "anggota" || adm; wr = me.peran === "pengurus"; pw = me.peran === "pengawas"; ma = wr || adm;
+      $("#login").hidden = true; $("#apply").hidden = true; $("#app").hidden = false;
+      $("#who").textContent = me.name; $("#role").textContent = me.id ? me.peran + (me.tipe === "luar_biasa" ? " · luar biasa" : "") : "admin";
+      $("#av").textContent = (me.name || "?").trim()[0].toUpperCase();
+      view = "ringkas"; D = null; draw();
+      await refresh();
+    }
+    // ---------- Pendaftaran, status calon anggota, atur ulang kata sandi ----------
+    const REG = `<h1>Pendaftaran anggota</h1><p class="mut">Lengkapi data berikut. Data pribadi hanya dapat dilihat pengurus koperasi dan dipakai untuk verifikasi keanggotaan.</p><p class="msg" id="aerr" hidden></p>
+      <form id="aform"><div class="fld"><label>Nama lengkap (sesuai KTP)</label><input name="name" required></div>
+      <div class="fld"><label>NIK (16 digit)</label><input name="nik" required inputmode="numeric" pattern="[0-9]{16}" maxlength="16"></div>
+      <div class="grid2"><div class="fld"><label>Tempat lahir</label><input name="bp" required></div><div class="fld"><label>Tanggal lahir</label><input name="bd" type="date" required></div></div>
+      <div class="fld"><label>Pekerjaan</label><input name="job"></div>
+      <div class="fld"><label>Alamat (jalan/gang dan nomor)</label><input name="addr" required></div>
+      <div class="grid2"><div class="fld"><label>RT</label><input name="rt" required inputmode="numeric" pattern="[0-9]{1,3}"></div><div class="fld"><label>RW</label><input name="rw" required inputmode="numeric" pattern="[0-9]{1,3}"></div></div>
+      <div class="fld"><label>Telepon / WhatsApp</label><input name="tel" required inputmode="tel"></div>
+      <label class="chk"><input type="checkbox" name="decl" required> Saya warga negara Indonesia, cakap melakukan tindakan hukum, dan berdomisili di Kelurahan Jelupang, Kecamatan Serpong Utara.</label>
+      <label class="chk"><input type="checkbox" name="cons" required> Saya menyetujui data pribadi saya diproses koperasi untuk keperluan keanggotaan.</label>
+      <button class="btn" id="abtn">Kirim pendaftaran</button></form>`;
+    function showApply(a) {
+      $("#login").hidden = true; $("#app").hidden = true; $("#apply").hidden = false;
+      const ap = a.apply, mb = a.member; let h;
+      if (mb) h = `<h1>Status keanggotaan</h1><p class="msg ok">${esc(mb.name)} (${esc(mb.no)}): <b>${esc(mb.status)}</b>${mb.note ? " – " + esc(mb.note) : ""}</p>` + (mb.status === "calon" ? '<p class="mut">Pendaftaran Anda disetujui. Pengurus akan memverifikasi domisili dan mencatat simpanan pokok, lalu mengaktifkan keanggotaan Anda.</p>' : '<p class="mut">Hubungi pengurus untuk informasi lebih lanjut.</p>');
+      else if (ap && ap.status === "diajukan") h = `<h1>Pendaftaran sedang diperiksa</h1><p class="msg ok">Diajukan ${dd(ap.at)}. Pengurus akan menghubungi Anda.</p>`;
+      else h = (ap && ap.status === "ditolak" ? `<p class="msg">Pendaftaran sebelumnya ditolak: ${esc(ap.note || "-")}. Anda dapat mengajukan kembali.</p>` : "") + REG;
+      $("#apply .box").innerHTML = h + '<p class="mut" style="margin-top:14px"><a href="#" id="aout">Keluar</a> · <a href="index.html">Kembali ke website</a></p>';
+    }
+    function showReset() {
+      $("#login").hidden = true; $("#app").hidden = true; $("#apply").hidden = false;
+      $("#apply .box").innerHTML = '<h1>Atur kata sandi baru</h1><p class="msg" id="aerr" hidden></p><form id="rform"><div class="fld"><label>Kata sandi baru (minimal 8 karakter)</label><input name="pw" type="password" minlength="8" required autocomplete="new-password"></div><button class="btn" id="abtn">Simpan kata sandi</button></form>';
+    }
+    function handleHash() {   // tautan konfirmasi email / atur ulang kata sandi dari Supabase
+      const H = new URLSearchParams(location.hash.slice(1));
+      if (H.get("error_description")) { history.replaceState(null, "", location.pathname); showLogin(H.get("error_description").replace(/\+/g, " ")); return true; }
+      if (H.get("access_token")) {
+        saveS({ access_token: H.get("access_token"), refresh_token: H.get("refresh_token"), expires_in: +H.get("expires_in") || 3600 });
+        const rec = H.get("type") === "recovery"; history.replaceState(null, "", location.pathname);
+        if (rec) { showReset(); return true; }
+      }
+      return false;
+    }
+    const back = () => encodeURIComponent(location.origin + location.pathname);
+    document.addEventListener("submit", async (e) => {
+      if (e.target.id !== "aform" && e.target.id !== "rform") return;
+      e.preventDefault();
+      const f = e.target, v = Object.fromEntries(new FormData(f)), b = $("#abtn"), er = $("#aerr"); b.disabled = true; er.hidden = true;
+      try {
+        if (f.id === "rform") {
+          const r = await fetch(BASE + "/auth/v1/user", { method: "PUT", headers: { apikey: KEY, Authorization: "Bearer " + (await token()), "Content-Type": "application/json" }, body: JSON.stringify({ password: v.pw }) });
+          if (!r.ok) throw new Error(await errMsg(r));
+          toast("Kata sandi diperbarui");
+        } else await rpc("submit_application", { p_name: v.name, p_nik: v.nik, p_birth_place: v.bp, p_birth_date: v.bd, p_occupation: v.job, p_address: v.addr, p_rt: v.rt, p_rw: v.rw, p_phone: v.tel, p_consent: !!v.cons, p_declared: !!v.decl });
+        await boot();
+      } catch (x) { er.textContent = x.message; er.hidden = false; b.disabled = false; }
+    });
+    document.addEventListener("click", (e) => {
+      const id = e.target.id; if (!["lreg", "lforgot", "aout"].includes(id)) return;
+      e.preventDefault();
+      if (id === "aout") { clearS(); showLogin(); }
+      else if (id === "lreg") ask("Daftar akun baru", [{ k: "name", l: "Nama lengkap", r: 1 }, { k: "email", l: "Email", t: "email", r: 1 }, { k: "pw", l: "Kata sandi (minimal 8 karakter)", t: "password", r: 1 }],
+        async (v) => {
+          if (v.pw.length < 8) throw new Error("Kata sandi minimal 8 karakter");
+          const r = await fetch(BASE + "/auth/v1/signup?redirect_to=" + back(), { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email: v.email.trim(), password: v.pw, data: { full_name: v.name.trim() } }) });
+          if (!r.ok) throw new Error(await errMsg(r));
+        }, "Daftar", () => showLogin("Akun dibuat. Buka email Anda dan klik tautan konfirmasi, lalu masuk di sini.", true), "Berhasil");
+      else ask("Atur ulang kata sandi", [{ k: "email", l: "Email akun", t: "email", r: 1 }],
+        async (v) => { const r = await fetch(BASE + "/auth/v1/recover?redirect_to=" + back(), { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email: v.email.trim() }) }); if (!r.ok) throw new Error(await errMsg(r)); },
+        "Kirim tautan", () => showLogin("Jika email terdaftar, tautan pengaturan ulang sudah dikirim.", true), "Terkirim");
+    });
+    async function refresh() {
+      try {
+        const [sum, sav, loans, meets, notes, mon, log, apps, pos, prof] = await Promise.all([
+          getAll("/rest/v1/coop_summary?select=*&order=no_anggota"),
+          api("GET", "/rest/v1/coop_savings?select=*&order=trx_date.desc,id.desc&limit=500"),
+          getAll("/rest/v1/coop_loans?select=*,coop_installments(*)&order=requested_at.desc"),
+          api("GET", "/rest/v1/coop_meetings?select=*&order=held_at.desc&limit=50"),
+          staff ? getAll("/rest/v1/coop_notes?select=*&order=created_at.desc") : [],
+          api("GET", "/rest/v1/coop_monthly?select=*&order=bulan"),
+          staff ? api("GET", "/rest/v1/coop_audit?select=*&order=at.desc&limit=300") : [],
+          ma ? getAll("/rest/v1/coop_application_list?select=*&order=id.desc") : [],
+          staff ? getAll("/rest/v1/coop_positions?select=*&order=id") : [],
+          me.id ? api("GET", "/rest/v1/coop_member_profile?select=*&member_id=eq." + me.id) : [],
+        ]);
+        D = { sum, sav, loans, meets, notes, mon, log, apps, pos, prof };
+      } catch (e) { toast(e.message); if (!D) D = { sum: [], sav: [], loans: [], meets: [], notes: [], mon: [], log: [], apps: [], pos: [], prof: [] }; }
+      draw(true);
+    }
+
+    // ---------- Pembantu tampilan ----------
+    const TITLE = { ringkas: "Beranda", profil: "Profil saya", simpanan: "Simpanan", pinjaman: "Pinjaman", rapat: "Rapat", anggota: "Anggota", catatan: "Catatan pengawas", laporan: "Laporan", log: "Log aktivitas", daftar: "Pendaftaran", jabatan: "Jabatan", buku: "Buku daftar" };
+    const ST = { diajukan: "Menunggu keputusan", berjalan: "Berjalan", lunas: "Lunas", ditolak: "Ditolak", dibatalkan: "Dibatalkan" };
+    const TB = {}, TS = {};
+    const ts = (k, o) => (TS[k] = TS[k] || { q: "", c: "", s: (o && o.sort) || 0, d: (o && o.dir) || 1, p: 0 });
+    const AS = () => D.sum.filter((x) => !["keluar", "diberhentikan", "meninggal"].includes(x.status) && x.tipe !== "ex_officio");   // yang sudah berhenti tidak dihitung
+    const sumOf = (m) => +m.pokok + +m.wajib + +m.sukarela;
+    const mine = () => D.sum.find((x) => x.id === me.id) || {};
+    const nm = (id) => (D.sum.find((x) => x.id === id) || {}).name || "-";
+    const rs = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + " jt" : n >= 1e3 ? Math.round(n / 1e3) + " rb" : String(Math.round(n)));
+    const amt = (a) => `<span class="${a > 0 ? "in" : "out"}">${a > 0 ? "+" : "-"}${rp(Math.abs(a))}</span>`;
+    const empty = (t) => `<div class="empty">${t}</div>`;
+    const bar = (t, btn, sub) => `<div class="bar"><div><h2>${t}</h2>${sub ? `<p class="mut">${sub}</p>` : ""}</div><div class="act" style="margin:0">${btn || ""}</div></div>`;
+    const tbl = (h, rows, right = []) => `<div class="tw"><table><thead><tr>${h.map((x, i) => `<th class="${right.includes(i) ? "r" : ""}">${x}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${right.includes(i) ? "r" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+    const kps = (a) => `<div class="kps">${a.map(([l, v, go, w]) => `<${go ? "button" : "div"} class="kp${w ? " " + w : ""}" ${go ? `type="button" data-v="${go}"` : ""}><span>${l}</span><b>${v}</b></${go ? "button" : "div"}>`).join("")}</div>`;
+    const chips = (k, list) => `<div class="chips">${list.map(([v, l]) => `<button type="button" class="chip2${ts(k).c === v ? " on" : ""}" data-a="chip" data-k="${k}" data-c="${esc(v)}">${l}</button>`).join("")}</div>`;
+    const unpaid = () => D.loans.filter((l) => l.status === "berjalan").flatMap((l) => (l.coop_installments || []).filter((i) => !i.paid_at).map((i) => ({ ...i, member_id: l.member_id })));
+    const comp = (p, w, s) => { const t = p + w + s || 1; return `<div class="comp" role="img" aria-label="Komposisi simpanan"><i style="width:${p / t * 100}%;background:var(--mar)"></i><i style="width:${w / t * 100}%;background:var(--red)"></i><i style="width:${s / t * 100}%;background:var(--yel)"></i></div><div class="lg"><span><b style="background:var(--mar)"></b>Pokok ${rp(p)}</span><span><b style="background:var(--red)"></b>Wajib ${rp(w)}</span><span><b style="background:var(--yel)"></b>Sukarela ${rp(s)}</span></div>`; };
+    function trend() {
+      const m = {}, ks = [], d = new Date();
+      (D.mon || []).forEach((x) => { m[x.bulan] = +x.setoran || 0; });
+      for (let i = 5; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); ks.push(x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0")); }
+      const mx = Math.max(1, ...ks.map((k) => m[k] || 0));
+      return `<div class="bars">${ks.map((k) => `<div><b>${m[k] ? rs(m[k]) : ""}</b><span class="col"><i style="height:${Math.max(3, (m[k] || 0) / mx * 100)}%"></i></span><small>${new Date(k + "-01T00:00").toLocaleDateString("id-ID", { month: "short" })}</small></div>`).join("")}</div>`;
+    }
+
+    // ---------- Tabel interaktif: cari, filter, urut, halaman, CSV ----------
+    function mk(key, cols, rows, o) {
+      TB[key] = { cols, rows, o }; ts(key, o);
+      return `<div class="tools"><input type="search" data-t="${key}" placeholder="Cari…" value="${esc(ts(key).q)}" aria-label="Cari">${o.chips ? chips(key, o.chips) : ""}<button class="btn ghost sm" data-a="csv" data-k="${key}">Unduh CSV</button></div><div id="tb-${key}"></div>`;
+    }
+    function sel(key) {
+      const { cols, rows, o } = TB[key], s = ts(key), q = s.q.toLowerCase(), c = cols[s.s];
+      let r = rows.filter((x) => (!s.c || o.cf(x) === s.c) && (!q || o.q(x).toLowerCase().includes(q)));
+      if (c && c.v) r = [...r].sort((a, b) => { const x = c.v(a), y = c.v(b); return (x > y ? 1 : x < y ? -1 : 0) * s.d; });
+      return r;
+    }
+    function paint(key) {
+      const el = $("#tb-" + key); if (!el || !TB[key]) return;
+      const { cols, o } = TB[key], s = ts(key), r = sel(key), per = o.per || 12, n = Math.max(1, Math.ceil(r.length / per));
+      s.p = Math.max(0, Math.min(s.p, n - 1));
+      el.innerHTML = r.length ? `<div class="tw"><table><thead><tr>${cols.map((c, i) => `<th class="${c.r ? "r" : ""}">${c.v ? `<button type="button" data-a="sort" data-k="${key}" data-i="${i}">${c.h}${s.s === i ? (s.d > 0 ? " ▲" : " ▼") : ""}</button>` : c.h}</th>`).join("")}</tr></thead><tbody>${r.slice(s.p * per, s.p * per + per).map((x) => `<tr${o.row ? ` data-a="${o.row}" data-id="${x.id}"` : ""}>${cols.map((c) => `<td class="${c.r ? "r" : ""}">${c.f(x)}</td>`).join("")}</tr>`).join("")}</tbody>${o.foot ? `<tfoot><tr>${o.foot(r)}</tr></tfoot>` : ""}</table></div><div class="pg"><span class="mut">${r.length} data</span>${n > 1 ? `<div class="act" style="margin:0"><button class="btn ghost sm" data-a="pg" data-k="${key}" data-d="-1" ${s.p ? "" : "disabled"}>‹ Sebelumnya</button><span class="mut" style="align-self:center">${s.p + 1} / ${n}</span><button class="btn ghost sm" data-a="pg" data-k="${key}" data-d="1" ${s.p < n - 1 ? "" : "disabled"}>Berikutnya ›</button></div>` : ""}</div>` : empty("Tidak ada data yang cocok.");
+    }
+    function dlcsv(name, rows) {
+      const c = rows.map((r) => r.map((v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"').join(",")).join("\r\n"), a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(["\ufeff" + c], { type: "text/csv" })); a.download = name + "-" + today() + ".csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 500);
+    }
+    function info(t, h) {
+      const d = $("#dlg"); $("#dt").textContent = t;
+      $("#df").innerHTML = h + '<div class="act"><button type="button" class="btn ghost" id="dx">Tutup</button></div>';
+      $("#dx").onclick = () => d.close(); $("#df").onsubmit = (e) => e.preventDefault(); if (d.open) d.close(); d.showModal();
+    }
+
+    // ---------- Kerangka & halaman ----------
+    function draw(keep) {
+      for (const k in TB) delete TB[k];
+      const g = [["Menu saya", me.id ? ["ringkas", "profil", "simpanan", "pinjaman", "rapat"] : ["ringkas"]], ...(staff ? [[adm && !me.id ? "Administrasi" : pw ? "Pengawasan" : "Pengelolaan", ["anggota", ...(ma ? ["daftar"] : []), "jabatan", ...(me.id ? ["catatan", "laporan"] : []), "buku", "log"]]] : [])];
+      const ic = { ringkas: "🏠", profil: "👤", simpanan: "💰", pinjaman: "🏦", rapat: "📅", anggota: "👥", catatan: "🔍", laporan: "📊", log: "🧾", daftar: "📝", jabatan: "🏛️", buku: "📚" };
+      const bd = D ? { pinjaman: wr ? D.loans.filter((l) => l.status === "diajukan").length : 0, catatan: staff ? D.notes.filter((n) => n.status !== "selesai").length : 0, daftar: ma ? (D.apps || []).filter((x) => x.status === "diajukan").length : 0 } : {};
+      $("#side").innerHTML = '<div class="brand">Koperasi<br>KKMP Jelupang</div>' + g.map(([l, it]) => `<h6>${l}</h6>` + it.map((k) => `<button type="button" data-v="${k}" class="${k === view ? "on" : ""}"${k === view ? ' aria-current="page"' : ""}><span aria-hidden="true">${ic[k]}</span>${TITLE[k]}${bd[k] ? `<em class="nb">${bd[k]}</em>` : ""}</button>`).join("")).join("");
+      $("#pt").textContent = TITLE[view];
+      $("#view").innerHTML = D ? ({ ringkas: vRingkas, profil: vProfil, simpanan: vSimpanan, pinjaman: vPinjaman, rapat: vRapat, anggota: vAnggota, catatan: vCatatan, laporan: vLaporan, log: vLog, daftar: vDaftar, jabatan: vJabatan, buku: vBuku })[view]() : '<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
+      Object.keys(TB).forEach(paint);
+      if (!keep) window.scrollTo(0, 0);
+    }
+    function vRingkas() {
+      const hr = new Date().getHours(), g = hr < 11 ? "Selamat pagi" : hr < 15 ? "Selamat siang" : hr < 18 ? "Selamat sore" : "Selamat malam", t = today();
+      const up = unpaid().sort((a, b) => (a.due_date < b.due_date ? -1 : 1)), late = up.filter((i) => i.due_date < t);
+      const wait = D.loans.filter((l) => l.status === "diajukan"), open = D.notes.filter((n) => n.status !== "selesai");
+      const nx = D.meets.filter((m) => m.held_at >= t).sort((a, b) => (a.held_at < b.held_at ? -1 : 1))[0];
+      const meet = `<div class="panel"><h3>Rapat berikutnya</h3>${nx ? `<b>${esc(nx.title)}</b><p class="mut">${dd(nx.held_at)}${nx.place ? " · " + esc(nx.place) : ""}</p><button class="btn ghost sm" data-v="rapat">Lihat agenda</button>` : '<p class="mut">Belum ada rapat terjadwal.</p>'}</div>`;
+      const head = `<div class="hero"><h2>${g}, ${esc(me.name.split(" ")[0])}</h2><p>${staff ? "Ringkasan koperasi saat ini." : "Ringkasan simpanan dan pinjaman Anda."}</p></div>`;
+      if (!staff) {
+        const m = mine(), a = up[0], ln = D.loans.find((l) => l.status === "berjalan"), ins = ln ? ln.coop_installments || [] : [], pd = ins.filter((i) => i.paid_at).length;
+        return head + kps([["Total simpanan", rp(sumOf(m)), "simpanan"], ["Simpanan wajib", rp(m.wajib), "simpanan"], ["Sisa pinjaman", rp(m.sisa_pokok), "pinjaman"], ["Angsuran berikutnya", a ? rp(a.amount) + "<br><small>" + dd(a.due_date) + "</small>" : "-", "pinjaman", a && a.due_date < t ? "bad" : ""]]) +
+          `<div class="cols"><div class="panel"><h3>Komposisi simpanan</h3>${comp(+m.pokok, +m.wajib, +m.sukarela)}</div><div class="panel"><h3>Pinjaman berjalan</h3>${ln ? `<b>${rp(ln.principal)}</b> <span class="mut">${pd} dari ${ins.length} angsuran lunas</span><div class="prog"><i style="width:${ins.length ? pd / ins.length * 100 : 0}%"></i></div>` : '<p class="mut">Tidak ada pinjaman berjalan.</p><button class="btn sm" data-a="apply">Ajukan pinjaman</button>'}</div></div><div class="cols"><div class="panel"><h3>Setoran 6 bulan terakhir</h3>${trend()}</div>${meet}</div>`;
+      }
+      const appsW = (D.apps || []).filter((x) => x.status === "diajukan").length, calon = D.sum.filter((x) => x.status === "calon").length, expd = (D.pos || []).filter((x) => !x.ended_at && x.term_end && x.term_end < t).length;
+      const todo = [wr && wait.length ? [wait.length + " pengajuan pinjaman menunggu keputusan", "pinjaman"] : null, late.length ? [late.length + " angsuran terlambat", "pinjaman"] : null, open.length ? [open.length + " catatan pengawas belum selesai", "catatan"] : null, ma && appsW ? [appsW + " pendaftaran anggota menunggu diperiksa", "daftar"] : null, ma && calon ? [calon + " calon anggota menunggu aktivasi", "anggota"] : null, expd ? [expd + " jabatan sudah melewati masa jabatan (belum diganti atau diakhiri)", "jabatan"] : null].filter(Boolean);
+      return head + kps([["Anggota aktif", D.sum.filter((x) => x.status === "aktif" && x.tipe !== "ex_officio").length, "anggota"], ["Total simpanan", rp(AS().reduce((s, x) => s + sumOf(x), 0)), "simpanan"], ["Pinjaman beredar", rp(AS().reduce((s, x) => s + +x.sisa_pokok, 0)), "pinjaman"], ["Angsuran terlambat", late.length, "pinjaman", late.length ? "bad" : ""]]) +
+        `<div class="cols"><div class="panel"><h3>Perlu tindakan</h3>${todo.length ? todo.map(([x, v]) => `<button class="todo" data-v="${v}">${x}<span>›</span></button>`).join("") : '<p class="mut">Tidak ada yang perlu ditindak.</p>'}</div>${meet}</div><div class="cols"><div class="panel"><h3>Komposisi simpanan</h3>${comp(AS().reduce((s, x) => s + +x.pokok, 0), AS().reduce((s, x) => s + +x.wajib, 0), AS().reduce((s, x) => s + +x.sukarela, 0))}</div><div class="panel"><h3>Setoran 6 bulan terakhir</h3>${trend()}</div></div>`;
+    }
+    function vProfil() {
+      const m = mine();
+      return bar("Profil saya") + `<div class="panel prof"><div class="av big">${esc((m.name || "?")[0])}</div><div><h3 style="margin:0">${esc(m.name)}</h3><p class="mut">${esc(m.no_anggota)} · ${m.peran}${m.jabatan ? " · " + esc(m.jabatan) : ""}</p><span class="chip c-${m.status}" style="margin:6px 0 0">${m.status}</span></div></div>
+        <div class="panel"><h3>Data anggota</h3><dl class="dl"><dt>Bergabung</dt><dd>${dd(m.joined_at)}</dd><dt>Telepon</dt><dd>${esc(m.phone || "-")}</dd><dt>Email</dt><dd>${esc(m.email || "-")}</dd></dl><p class="mut">Untuk mengubah data diri, hubungi pengurus.</p></div>${privPanel()}` +
+        kps([["Simpanan pokok", rp(m.pokok)], ["Simpanan wajib", rp(m.wajib)], ["Simpanan sukarela", rp(m.sukarela)], ["Sisa pinjaman", rp(m.sisa_pokok)]]);
+    }
+    function vAnggota() {
+      const cols = [{ h: "No", v: (x) => x.no_anggota, f: (x) => esc(x.no_anggota) }, { h: "Nama", v: (x) => x.name, f: (x) => `<b>${esc(x.name)}</b>${x.jabatan ? `<br><span class="mut">${esc(x.jabatan)}</span>` : ""}` }, { h: "Peran", v: (x) => x.peran, f: (x) => x.peran + (x.tipe && x.tipe !== "biasa" ? ` <span class="mut">(${x.tipe === "luar_biasa" ? "luar biasa" : "ex-officio"})</span>` : "") }, { h: "Status", v: (x) => x.status, f: (x) => `<span class="chip c-${x.status}" style="margin:0">${x.status}</span>` }, { h: "Akun", v: (x) => (x.linked ? 1 : 0), f: (x) => (x.linked ? "✔ Tertaut" : '<span class="mut">Belum</span>') }, { h: "Simpanan", r: 1, v: sumOf, f: (x) => rp(sumOf(x)) }, { h: "Sisa pinjaman", r: 1, v: (x) => +x.sisa_pokok, f: (x) => rp(x.sisa_pokok) }, { h: "", f: (x) => (ma && (adm || x.peran === "anggota") ? `<button class="btn ghost sm" data-a="editmem" data-id="${x.id}">Ubah</button>` + (x.linked ? "" : ` <button class="btn sm" data-a="link" data-id="${x.id}">Tautkan akun</button>`) : "") }];
+      return bar("Anggota", ma ? '<button class="btn" data-a="addmem">Tambah anggota</button>' : "", "Klik baris untuk melihat rincian anggota.") +
+        mk("mem", cols, D.sum, { chips: [["", "Semua"], ["calon", "Calon"], ["aktif", "Aktif"], ["dibekukan", "Dibekukan"], ["keluar", "Keluar"], ["diberhentikan", "Diberhentikan"], ["meninggal", "Meninggal"]], cf: (x) => x.status, q: (x) => x.name + " " + x.no_anggota + " " + (x.jabatan || ""), row: "mem", foot: (r) => `<td colspan="5">Total tampil</td><td class="r">${rp(r.reduce((s, x) => s + sumOf(x), 0))}</td><td class="r">${rp(r.reduce((s, x) => s + +x.sisa_pokok, 0))}</td><td></td>` });
+    }
+    function vSimpanan() {
+      const src = staff ? AS() : [mine()], tot = (f) => src.reduce((s, x) => s + +x[f], 0);
+      const cols = [{ h: "Tanggal", v: (s) => s.trx_date, f: (s) => dd(s.trx_date) }, ...(staff ? [{ h: "Anggota", v: (s) => nm(s.member_id), f: (s) => esc(nm(s.member_id)) }] : []), { h: "Jenis", v: (s) => s.kind, f: (s) => s.kind }, { h: "Jumlah", r: 1, v: (s) => (s.voided_at ? 0 : +s.amount), f: (s) => (s.voided_at ? `<s class="mut">${amt(s.amount)}</s>` : amt(s.amount)) }, { h: "Catatan", v: (s) => s.note || "", f: (s) => esc(s.note || "") + (s.voided_at ? ` <b class="late">dibatalkan: ${esc(s.void_reason || "")}</b>` : "") }, { h: "", f: (s) => (wr && !s.voided_at && s.member_id !== me.id ? `<button class="btn ghost sm" data-a="vsav" data-id="${s.id}">Batalkan</button>` : "") }];
+      return bar("Simpanan", wr ? '<button class="btn" data-a="sav">Catat simpanan</button>' : "") + kps([["Pokok", rp(tot("pokok"))], ["Wajib", rp(tot("wajib"))], ["Sukarela", rp(tot("sukarela"))], ["Total", rp(src.reduce((s, x) => s + sumOf(x), 0))]]) +
+        mk("sav", cols, D.sav, { sort: 0, dir: -1, per: 15, chips: [["", "Semua"], ["pokok", "Pokok"], ["wajib", "Wajib"], ["sukarela", "Sukarela"]], cf: (s) => s.kind, q: (s) => nm(s.member_id) + " " + s.kind + " " + (s.note || ""), foot: (r) => `<td colspan="${cols.length - 3}">Total tampil (tanpa yang dibatalkan)</td><td class="r">${rp(r.reduce((s, x) => s + (x.voided_at ? 0 : +x.amount), 0))}</td><td></td><td></td>` }) +
+        (D.sav.length >= 500 ? '<p class="mut" style="margin-top:8px">Daftar memuat 500 catatan terbaru; total di atas dihitung dari seluruh data.</p>' : "");
+    }
+    function vPinjaman() {
+      const s = ts("loan"), L = D.loans.filter((l) => !s.c || l.status === s.c);
+      return bar("Pinjaman", '<button class="btn" data-a="apply">Ajukan pinjaman</button>') + chips("loan", [["", "Semua"], ["diajukan", "Menunggu"], ["berjalan", "Berjalan"], ["lunas", "Lunas"], ["ditolak", "Ditolak"], ["dibatalkan", "Dibatalkan"]]) +
+        (L.length ? L.map((l) => {
+          const ins = [...(l.coop_installments || [])].sort((a, b) => a.no - b.no), nx = ins.find((i) => !i.paid_at), pd = ins.filter((i) => i.paid_at).length, lp = [...ins].reverse().find((i) => i.paid_at);
+          return `<details class="card"><summary><b>${staff ? esc(nm(l.member_id)) + " · " : ""}${rp(l.principal)}</b><span class="mut">${l.tenor} bulan${+l.rate_pct ? " · jasa " + l.rate_pct + "%/bln" : ""}</span><span class="chip c-${l.status}">${ST[l.status]}</span></summary>
+            <p class="mut">Diajukan ${dd(l.requested_at)}${l.purpose ? " · " + esc(l.purpose) : ""}${l.decision_note ? "<br>Catatan pengurus: " + esc(l.decision_note) : ""}</p>
+            ${ins.length ? `<div class="prog"><i style="width:${pd / ins.length * 100}%"></i></div><p class="mut">${pd} dari ${ins.length} angsuran lunas</p>` : ""}
+            ${l.status === "diajukan" && wr ? `<div class="act"><button class="btn sm" data-a="dec" data-ok="1" data-id="${l.id}">Setujui</button><button class="btn sm danger" data-a="dec" data-id="${l.id}">Tolak</button></div>` : ""}
+            ${(l.member_id === me.id && l.status === "diajukan") || (wr && l.member_id !== me.id && l.status === "berjalan" && !pd) ? `<div class="act"><button class="btn sm danger" data-a="cancel" data-id="${l.id}">Batalkan ${l.status === "berjalan" ? "pinjaman" : "pengajuan"}</button></div>` : ""}
+            ${ins.length ? tbl(["Ke", "Jatuh tempo", "Jumlah", "Status", ""], ins.map((i) => [i.no, dd(i.due_date), rp(i.amount), i.paid_at ? "Lunas " + dd(i.paid_at) : i.due_date < today() ? '<b class="late">Terlambat</b>' : "Belum", wr && l.member_id !== me.id ? (nx && nx.id === i.id ? `<button class="btn sm" data-a="pay" data-id="${i.id}">Catat bayar</button>` : lp && lp.id === i.id ? `<button class="btn ghost sm" data-a="vins" data-id="${i.id}">Batalkan bayar</button>` : "") : ""]), [2]) : ""}</details>`;
+        }).join("") : empty("Tidak ada pinjaman pada filter ini."));
+    }
+    function vRapat() {
+      const s = ts("rapat"), t = today(), L = D.meets.filter((m) => !s.c || m.kind === s.c);
+      const card = (m) => `<details class="card"><summary><b>${esc(m.title)}</b><span class="mut">${dd(m.held_at)}${m.place ? " · " + esc(m.place) : ""}</span><span class="chip">${esc(m.kind)}</span></summary>${m.agenda ? `<p><b>Agenda</b></p><pre>${esc(m.agenda)}</pre>` : ""}${m.minutes ? `<p><b>Hasil rapat</b></p><pre>${esc(m.minutes)}</pre>` : ""}${!m.agenda && !m.minutes ? '<p class="mut">Belum ada uraian.</p>' : ""}</details>`;
+      const up = L.filter((m) => m.held_at >= t).reverse(), past = L.filter((m) => m.held_at < t);
+      return bar("Rapat dan Hasil Keputusan", wr ? '<button class="btn" data-a="meet">Tambah rapat</button>' : "") + chips("rapat", [["", "Semua"], ["RAT", "RAT"], ["rapat anggota", "Rapat anggota"], ...(staff ? [["rapat pengurus", "Rapat pengurus"]] : [])]) +
+        `<h3 class="sec">Akan datang</h3>${up.length ? up.map(card).join("") : empty("Belum ada rapat terjadwal.")}<h3 class="sec">Sebelumnya</h3>${past.length ? past.map(card).join("") : empty("Belum ada rapat tercatat.")}`;
+    }
+    function vCatatan() {
+      const s = ts("note"), L = D.notes.filter((n) => !s.c || n.status === s.c);
+      return bar("Catatan Pengawas", pw ? '<button class="btn" data-a="note">Tulis catatan</button>' : "") + chips("note", [["", "Semua"], ["terbuka", "Terbuka"], ["ditanggapi", "Ditanggapi"], ["selesai", "Selesai"]]) +
+        (L.length ? L.map((n) => `<div class="card"><b>${esc(n.title)}</b><span class="chip c-${n.level}">${n.level}</span><p class="mut">${dd(n.created_at)} · ${esc(n.created_by)} · status: ${n.status}</p>${n.body ? `<pre>${esc(n.body)}</pre>` : ""}${n.response ? `<p><b>Tanggapan pengurus</b> <span class="mut">${dd(n.responded_at)}</span></p><pre>${esc(n.response)}</pre>` : ""}
+          <div class="act">${wr && n.status !== "selesai" ? `<button class="btn sm" data-a="resp" data-id="${n.id}">Tanggapi</button>` : ""}${pw && n.status === "ditanggapi" ? `<button class="btn sm" data-a="done" data-id="${n.id}">Tandai selesai</button>` : ""}</div></div>`).join("") : empty("Tidak ada catatan."));
+    }
+    function vLaporan() {
+      const t = today(), late = unpaid().filter((i) => i.due_date < t).sort((a, b) => (a.due_date < b.due_date ? -1 : 1)), f = (k) => AS().reduce((s, x) => s + +x[k], 0), tot = f("pokok") + f("wajib") + f("sukarela"), out = f("sisa_pokok");
+      return bar("Laporan", '<button class="btn ghost" data-a="print">Cetak</button><button class="btn ghost" data-a="csvm">Unduh daftar anggota</button>', "Per " + dd(t)) +
+        kps([["Anggota aktif", D.sum.filter((x) => x.status === "aktif" && x.tipe !== "ex_officio").length], ["Total simpanan", rp(tot)], ["Pinjaman beredar", rp(out)], ["Pinjaman / simpanan", tot ? Math.round(out / tot * 100) + "%" : "-"]]) +
+        `<div class="panel"><h3>Komposisi simpanan</h3>${comp(f("pokok"), f("wajib"), f("sukarela"))}</div><h3 class="sec">Angsuran terlambat</h3>` +
+        (late.length ? tbl(["Anggota", "Angsuran ke", "Jatuh tempo", "Terlambat", "Jumlah"], late.map((i) => [esc(nm(i.member_id)), i.no, dd(i.due_date), Math.floor((Date.parse(t) - Date.parse(i.due_date)) / 864e5) + " hari", rp(i.amount)]), [4]) : empty("Tidak ada angsuran terlambat."));
+    }
+    function vLog() {
+      const cols = [{ h: "Waktu", v: (x) => x.at, f: (x) => new Date(x.at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) }, { h: "Pelaku", v: (x) => x.actor_email || "", f: (x) => esc(x.actor_email || "") }, { h: "Aksi", v: (x) => x.action, f: (x) => esc(x.action) }, { h: "Rincian", f: (x) => `<span class="mut" title="${esc(JSON.stringify(x.detail))}">${esc(JSON.stringify(x.detail).slice(0, 90))}</span>` }];
+      return bar("Log aktivitas", "", "300 aktivitas terbaru. Hanya pengurus dan pengawas yang dapat melihat.") + mk("log", cols, D.log || [], { sort: 0, dir: -1, per: 15, q: (x) => x.action + " " + (x.actor_email || "") + " " + JSON.stringify(x.detail) });
+    }
+    function privPanel() {
+      const p = (D.prof || [])[0];
+      return `<div class="panel"><h3>Data pribadi</h3>` + (p ? `<dl class="dl"><dt>NIK</dt><dd>${esc(p.nik_tampil || "-")}</dd><dt>Lahir</dt><dd>${esc(p.birth_place || "-")}, ${dd(p.birth_date)}</dd><dt>Pekerjaan</dt><dd>${esc(p.occupation || "-")}</dd><dt>Alamat</dt><dd>${esc(p.street || "-")}, RT ${esc(p.rt || "-")}/RW ${esc(p.rw || "-")}, Kel. ${esc(p.kelurahan)}</dd><dt>Domisili</dt><dd>${p.domicile_verified_at ? "✔ terverifikasi " + dd(p.domicile_verified_at) : "belum diverifikasi pengurus"}</dd></dl>` : '<p class="mut">Belum diisi. Hubungi pengurus untuk melengkapi.</p>') + "</div>";
+    }
+    async function memDetail(id) {
+      const m = D.sum.find((x) => x.id === id); if (!m) return;
+      let pr = {}; try { pr = (await api("GET", "/rest/v1/coop_member_profile?select=*&member_id=eq." + id))[0] || {}; } catch (e) {}
+      const sv = D.sav.filter((s) => s.member_id === id).slice(0, 8), ln = D.loans.filter((l) => l.member_id === id), ps = (D.pos || []).filter((x) => x.member_id === id);
+      const priv = pr.member_id ? `<dl class="dl"><dt>NIK</dt><dd>${esc(pr.nik_tampil || "-")} ${ma && pr.nik_tampil ? `<button class="btn ghost sm" data-a="nik" data-id="${id}">Lihat lengkap</button>` : ""}</dd><dt>Lahir</dt><dd>${esc(pr.birth_place || "-")}, ${dd(pr.birth_date)}</dd><dt>Pekerjaan</dt><dd>${esc(pr.occupation || "-")}</dd><dt>Alamat</dt><dd>${esc(pr.street || "-")}, RT ${esc(pr.rt || "-")}/RW ${esc(pr.rw || "-")}, Kel. ${esc(pr.kelurahan)}</dd><dt>Domisili</dt><dd>${pr.domicile_verified_at ? "✔ terverifikasi " + dd(pr.domicile_verified_at) : "belum diverifikasi"}</dd><dt>Persetujuan data</dt><dd>${pr.consent_at ? "✔ " + dd(pr.consent_at) : "belum tercatat"}</dd></dl>` : '<p class="mut">Belum diisi.</p>';
+      const act = ma ? `<div class="act">${adm || m.peran === "anggota" ? `<button class="btn ghost sm" data-a="priv" data-id="${id}">Isi / ubah data pribadi</button>` : ""}${pr.member_id && !pr.domicile_verified_at ? `<button class="btn ghost sm" data-a="dom" data-id="${id}">Verifikasi domisili</button>` : ""}${m.status === "calon" ? `<button class="btn sm" data-a="act" data-id="${id}">Aktifkan anggota</button>` : ""}</div>` : "";
+      info(m.name, `<p class="mut">${esc(m.no_anggota)} · ${m.peran}${m.jabatan ? " · " + esc(m.jabatan) : ""} · <span class="chip c-${m.status}" style="margin:0">${m.status}</span>${m.status_since ? " sejak " + dd(m.status_since) : ""}</p><dl class="dl"><dt>Bergabung</dt><dd>${dd(m.joined_at)}</dd><dt>Telepon</dt><dd>${esc(m.phone || "-")}</dd><dt>Email</dt><dd>${esc(m.email || "-")}</dd><dt>Sisa pinjaman</dt><dd>${rp(m.sisa_pokok)}</dd></dl>${comp(+m.pokok, +m.wajib, +m.sukarela)}<h4>Data pribadi</h4>${priv}${act}${ps.length ? `<h4>Riwayat jabatan</h4>${tbl(["Jabatan", "Mulai", "Selesai"], ps.map((x) => [esc(x.jabatan) + (x.ex_officio ? " (ex-officio)" : ""), dd(x.term_start), x.ended_at ? dd(x.ended_at) : "menjabat"]))}` : ""}<h4>Simpanan terakhir</h4>${sv.length ? tbl(["Tanggal", "Jenis", "Jumlah"], sv.map((s) => [dd(s.trx_date), s.kind, amt(s.amount)]), [2]) : '<p class="mut">Belum ada.</p>'}<h4>Pinjaman</h4>${ln.length ? ln.map((l) => `<p>${rp(l.principal)} · ${l.tenor} bulan <span class="chip c-${l.status}" style="margin-left:6px">${ST[l.status]}</span></p>`).join("") : '<p class="mut">Tidak ada.</p>'}`);
+    }
+
+    // ---------- Pendaftaran, jabatan, buku daftar ----------
+    function vDaftar() {
+      const cols = [{ h: "Tanggal", v: (x) => x.created_at, f: (x) => dd(x.created_at) }, { h: "Nama", v: (x) => x.name, f: (x) => `<b>${esc(x.name)}</b><br><span class="mut">${esc(x.email)}</span>` }, { h: "NIK", f: (x) => esc(x.nik_tampil) }, { h: "Alamat", f: (x) => esc(x.address) + ", RT " + esc(x.rt) + "/RW " + esc(x.rw) }, { h: "Telepon", f: (x) => esc(x.phone) }, { h: "Status", v: (x) => x.status, f: (x) => `<span class="chip c-${x.status}" style="margin:0">${x.status}</span>` }, { h: "", f: (x) => `<button class="btn ${x.status === "diajukan" ? "" : "ghost "}sm" data-a="app" data-id="${x.id}">${x.status === "diajukan" ? "Periksa" : "Lihat"}</button>` }];
+      return bar("Pendaftaran anggota", "", "Pendaftar mengisi formulir sendiri setelah membuat akun. Pembukaan NIK lengkap tercatat di log.") +
+        mk("app", cols, D.apps || [], { sort: 0, dir: -1, chips: [["", "Semua"], ["diajukan", "Menunggu"], ["disetujui", "Disetujui"], ["ditolak", "Ditolak"]], cf: (x) => x.status, q: (x) => x.name + " " + x.email + " " + x.phone, row: "app" });
+    }
+    const JAB = [["pengurus|Ketua", "Pengurus – Ketua"], ["pengurus|Wakil Ketua Bidang Usaha", "Pengurus – Wakil Ketua Bidang Usaha"], ["pengurus|Wakil Ketua Bidang Anggota", "Pengurus – Wakil Ketua Bidang Anggota"], ["pengurus|Sekretaris", "Pengurus – Sekretaris"], ["pengurus|Bendahara", "Pengurus – Bendahara"], ["pengawas|Ketua Pengawas", "Pengawas – Ketua Pengawas"], ["pengawas|Anggota Pengawas", "Pengawas – Anggota"]];
+    function vJabatan() {
+      const t = today(), st = (x) => (x.ended_at ? "berakhir" : "aktif");
+      const cols = [{ h: "Organ", v: (x) => x.organ, f: (x) => x.organ }, { h: "Jabatan", v: (x) => x.jabatan, f: (x) => `<b>${esc(x.jabatan)}</b>${x.ex_officio ? ' <span class="chip c-aktif" style="margin:0">ex-officio</span>' : ""}` }, { h: "Nama", v: (x) => nm(x.member_id), f: (x) => esc(nm(x.member_id)) }, { h: "Mulai", v: (x) => x.term_start, f: (x) => dd(x.term_start) }, { h: "Berakhir", v: (x) => x.term_end || "9999", f: (x) => (x.ended_at ? dd(x.ended_at) + '<br><span class="mut">' + esc(x.end_reason || "") + "</span>" : x.term_end ? dd(x.term_end) + (x.term_end < t ? '<br><b class="late">masa jabatan berakhir</b>' : "") : "selama menjabat Lurah") }, { h: "Sumpah/janji", f: (x) => (x.oath_at ? dd(x.oath_at) : '<span class="mut">belum tercatat</span>') }, { h: "Dasar", f: (x) => esc(x.decision_ref || "") }, { h: "", f: (x) => (adm && !x.ended_at ? `<button class="btn ghost sm" data-a="endpos" data-id="${x.id}">Akhiri</button>` : "") }];
+      return bar("Jabatan Pengurus dan Pengawas", adm ? '<button class="btn" data-a="addpos">Tambah jabatan</button>' : "", "Pengurus 2 tahun dan Pengawas 5 tahun (maksimal 2 periode). Ketua Pengawas dijabat Lurah secara ex-officio (AD Pasal 16 dan 18). " + (adm ? "" : "Perubahan dicatat admin website setelah keputusan Rapat Anggota.")) +
+        mk("pos", cols, D.pos || [], { sort: 0, chips: [["", "Semua"], ["aktif", "Menjabat"], ["berakhir", "Berakhir"]], cf: st, q: (x) => x.organ + " " + x.jabatan + " " + nm(x.member_id), per: 15 });
+    }
+    function vBuku() {
+      const t = today(), P = (o) => (D.pos || []).filter((x) => x.organ === o).sort((a, b) => (a.term_start < b.term_start ? 1 : -1));
+      const pt = (o) => (P(o).length ? tbl(["Jabatan", "Nama", "Mulai", "Berakhir", "Sumpah/janji", "Dasar"], P(o).map((x) => [esc(x.jabatan) + (x.ex_officio ? " (ex-officio)" : ""), esc(nm(x.member_id)), dd(x.term_start), x.ended_at ? dd(x.ended_at) : x.term_end ? dd(x.term_end) : "selama menjabat", x.oath_at ? dd(x.oath_at) : "-", esc(x.decision_ref || "")])) : empty("Belum ada data."));
+      const am = [...D.sum].filter((x) => x.tipe !== "ex_officio").sort((a, b) => (a.no_anggota < b.no_anggota ? -1 : 1));
+      return bar("Buku Daftar", '<button class="btn ghost" data-a="print">Cetak</button><button class="btn ghost" data-a="csvm">Unduh daftar anggota</button>', "Koperasi Kelurahan Merah Putih Jelupang Kecamatan Serpong Utara · Akta Pendirian No. 08 tanggal 4 Juni 2025 · per " + dd(t)) +
+        `<h3 class="sec">Buku Daftar Anggota</h3>` + (am.length ? tbl(["No", "Nama", "Jenis", "Tanggal masuk", "Status", "Sejak"], am.map((x) => [esc(x.no_anggota), esc(x.name), x.tipe === "luar_biasa" ? "luar biasa" : "biasa", dd(x.joined_at), x.status, x.status_since ? dd(x.status_since) : "-"])) : empty("Belum ada anggota.")) +
+        `<h3 class="sec">Buku Daftar Pengurus</h3>${pt("pengurus")}<h3 class="sec">Buku Daftar Pengawas</h3>${pt("pengawas")}`;
+    }
+
+    // ---------- Interaksi ----------
+    document.addEventListener("click", (e) => {
+      const v = e.target.closest("[data-v]");
+      if (v && !v.closest("[data-a]")) { view = v.dataset.v; return draw(); }
+      const b = e.target.closest("[data-a]"); if (!b) return;
+      const a = b.dataset.a, k = b.dataset.k;
+      if (a === "chip") { const s = ts(k); s.c = b.dataset.c; s.p = 0; draw(true); }
+      else if (a === "sort") { const s = ts(k), i = +b.dataset.i; s.d = s.s === i ? -s.d : 1; s.s = i; paint(k); }
+      else if (a === "pg") { ts(k).p += +b.dataset.d; paint(k); }
+      else if (a === "csv") { const c = TB[k].cols.filter((x) => x.v); dlcsv(k, [c.map((x) => x.h), ...sel(k).map((r) => c.map((x) => x.v(r)))]); }
+      else if (a === "csvm") dlcsv("anggota", [["No", "Nama", "Peran", "Status", "Pokok", "Wajib", "Sukarela", "Sisa pinjaman"], ...D.sum.map((x) => [x.no_anggota, x.name, x.peran, x.status, x.pokok, x.wajib, x.sukarela, x.sisa_pokok])]);
+      else if (a === "vsav") ask("Batalkan catatan simpanan", [{ k: "r", l: "Alasan pembatalan (wajib)", t: "area", v: "" }], (v) => rpc("void_saving", { p_id: +b.dataset.id, p_reason: v.r }), "Batalkan catatan");
+      else if (a === "vins") ask("Batalkan pembayaran angsuran", [{ k: "r", l: "Alasan pembatalan (wajib)", t: "area", v: "" }], (v) => rpc("void_installment", { p_id: +b.dataset.id, p_reason: v.r }), "Batalkan pembayaran");
+      else if (a === "cancel") {
+        const l = D.loans.find((x) => x.id === +b.dataset.id), done = () => { toast("Dibatalkan"); return refresh(); };
+        if (l && l.member_id === me.id) { if (confirm("Batalkan pengajuan pinjaman ini?")) rpc("cancel_loan", { p_id: l.id, p_reason: "" }).then(done).catch((x) => toast(x.message)); }
+        else ask("Batalkan pinjaman", [{ k: "r", l: "Alasan pembatalan (wajib)", t: "area", v: "" }], (v) => rpc("cancel_loan", { p_id: +b.dataset.id, p_reason: v.r }), "Batalkan pinjaman");
+      }
+      else if (a === "link") rpc("link_member_account", { p_member: +b.dataset.id }).then(() => { toast("Akun tertaut"); return refresh(); }).catch((x) => toast(x.message));
+      else if (a === "nik") rpc("reveal_nik", { p_member: +b.dataset.id }).then((n) => info("NIK lengkap", `<p><b style="font-size:18px">${esc(n || "-")}</b></p><p class="mut">Pembukaan NIK ini tercatat di log aktivitas.</p>`)).catch((x) => toast(x.message));
+      else if (a === "dom") rpc("verify_domicile", { p_member: +b.dataset.id }).then(() => { toast("Domisili terverifikasi"); return refresh(); }).catch((x) => toast(x.message));
+      else if (a === "act") rpc("activate_member", { p_member: +b.dataset.id }).then(() => { toast("Anggota diaktifkan"); return refresh(); }).catch((x) => toast(x.message));
+      else if (a === "priv") api("GET", "/rest/v1/coop_member_profile?select=*&member_id=eq." + +b.dataset.id).then((r) => {
+        const p = r[0] || {}, mid = +b.dataset.id;
+        ask("Data pribadi anggota", [{ k: "nik", l: "NIK (16 digit; kosongkan bila tidak diubah)", v: "" }, { k: "bp", l: "Tempat lahir", v: p.birth_place }, { k: "bd", l: "Tanggal lahir", t: "date", v: p.birth_date }, { k: "job", l: "Pekerjaan", v: p.occupation }, { k: "street", l: "Alamat (jalan/gang, nomor)", v: p.street }, { k: "rt", l: "RT", v: p.rt }, { k: "rw", l: "RW", v: p.rw }, { k: "kel", l: "Kelurahan", v: p.kelurahan || "Jelupang" }, { k: "cons", l: "Persetujuan pemrosesan data pribadi", v: p.consent_at ? "1" : "", o: [["", "Belum / tidak diubah"], ["1", "Sudah diterima tertulis dari anggota"]] }],
+          (v) => rpc("save_member_private", { p_member: mid, p_nik: v.nik, p_birth_place: v.bp, p_birth_date: v.bd || null, p_occupation: v.job, p_street: v.street, p_rt: v.rt, p_rw: v.rw, p_kelurahan: v.kel, p_consent: v.cons === "1" }));
+      }).catch((x) => toast(x.message));
+      else if (a === "app") rpc("get_application", { p_id: +b.dataset.id }).then((r) => info("Pendaftaran: " + r.name, `<dl class="dl"><dt>NIK</dt><dd>${esc(r.nik)}</dd><dt>Lahir</dt><dd>${esc(r.birth_place || "-")}, ${dd(r.birth_date)}</dd><dt>Pekerjaan</dt><dd>${esc(r.occupation || "-")}</dd><dt>Alamat</dt><dd>${esc(r.address)}, RT ${esc(r.rt)}/RW ${esc(r.rw)}</dd><dt>Telepon</dt><dd>${esc(r.phone)}</dd><dt>Email</dt><dd>${esc(r.email)}</dd><dt>Pernyataan</dt><dd>${r.declared ? "✔ WNI, cakap hukum, berdomisili di Jelupang" : "-"}<br>${r.consent ? "✔ setuju pemrosesan data pribadi" : "-"}</dd><dt>Status</dt><dd><span class="chip c-${r.status}" style="margin:0">${r.status}</span> ${esc(r.decision_note || "")}</dd></dl><p class="mut">Pembukaan NIK ini tercatat di log aktivitas.</p>${r.status === "diajukan" ? `<div class="act"><button class="btn" data-a="appok" data-id="${r.id}">Setujui</button><button class="btn danger" data-a="appno" data-id="${r.id}">Tolak</button></div>` : ""}`)).catch((x) => toast(x.message));
+      else if (a === "appok") { const mx = Math.max(0, ...D.sum.map((x) => +((x.no_anggota.match(/(\d+)$/) || [0, 0])[1]))); ask("Setujui pendaftaran", [{ k: "no", l: "Nomor anggota", v: "KJ-" + String(mx + 1).padStart(4, "0"), r: 1 }, { k: "n", l: "Catatan (opsional)", v: "" }], (v) => rpc("decide_application", { p_id: +b.dataset.id, p_approve: true, p_no_anggota: v.no, p_note: v.n }), "Setujui sebagai calon anggota"); }
+      else if (a === "appno") ask("Tolak pendaftaran", [{ k: "n", l: "Alasan penolakan (wajib)", t: "area", v: "" }], (v) => rpc("decide_application", { p_id: +b.dataset.id, p_approve: false, p_no_anggota: "", p_note: v.n }), "Tolak");
+      else if (a === "addpos") ask("Tambah jabatan", [{ k: "m", l: "Anggota", v: "", o: D.sum.filter((x) => x.status === "aktif").map((x) => [x.id, x.no_anggota + " · " + x.name]) }, { k: "j", l: "Jabatan", v: "pengurus|Ketua", o: JAB }, { k: "st", l: "Mulai menjabat", t: "date", v: today(), r: 1 }, { k: "ex", l: "Ex-officio (jabatan melekat pada Lurah)?", v: "0", o: [["0", "Bukan"], ["1", "Ya, ex-officio"]] }, { k: "ref", l: "Dasar (keputusan Rapat Anggota / akta)", v: "" }, { k: "oath", l: "Tanggal sumpah/janji di depan Rapat Anggota (bila sudah)", t: "date", v: "" }, { k: "decl", l: "Tanggal pernyataan syarat (tidak ada hubungan keluarga sedarah/semenda derajat kesatu dengan pengurus/pengawas lain, dll.)", t: "date", v: today(), r: 1 }],
+        async (v) => { const [o, j] = v.j.split("|"); try { await api("POST", "/rest/v1/coop_positions", { member_id: +v.m, organ: o, jabatan: j, term_start: v.st, ex_officio: v.ex === "1", decision_ref: v.ref.trim() || null, oath_at: v.oath || null, syarat_dinyatakan_at: v.decl }); } catch (e) { throw new Error(/seat_uq/.test(e.message) ? "Jabatan ini masih dijabat orang lain. Akhiri dulu jabatan sebelumnya." : e.message); } });
+      else if (a === "endpos") ask("Akhiri jabatan", [{ k: "d", l: "Tanggal berakhir", t: "date", v: today(), r: 1 }, { k: "r", l: "Alasan (mis. masa jabatan berakhir, diganti Rapat Anggota)", v: "", r: 1 }], (v) => api("PATCH", "/rest/v1/coop_positions?id=eq." + +b.dataset.id, { ended_at: v.d, end_reason: v.r.trim() }), "Akhiri jabatan");
+      else if (a === "print") window.print();
+      else if (a === "mem") memDetail(+b.dataset.id);
+    });
+    document.addEventListener("input", (e) => {
+      const k = e.target.dataset && e.target.dataset.t;
+      if (k) { const s = ts(k); s.q = e.target.value; s.p = 0; paint(k); return; }
+      const f = e.target.form;
+      if (f && f.id === "df" && $("#dt").textContent === "Ajukan pinjaman" && f.elements.a && f.elements.t) {   // simulasi cicilan pokok
+        let p = $("#sim"); if (!p) { p = document.createElement("p"); p.id = "sim"; p.className = "mut"; p.style.marginBottom = "12px"; f.elements.t.closest(".fld").after(p); }
+        const n = +f.elements.a.value, t = Math.round(+f.elements.t.value);
+        p.textContent = n > 0 && t > 0 ? "Perkiraan pokok per bulan " + rp(n / t) + ". Jasa ditetapkan pengurus saat persetujuan." : "";
+      }
+    });
+
+    // ---------- Formulir ----------
+    function ask(title, fields, ok, label, after, msg) {
+      const d = $("#dlg"), f = $("#df");
+      $("#dt").textContent = title;
+      f.innerHTML = fields.map((x) => `<div class="fld"><label>${x.l}</label>${x.o ? `<select name="${x.k}">${x.o.map((o) => `<option value="${esc(o[0])}"${o[0] == x.v ? " selected" : ""}>${esc(o[1])}</option>`).join("")}</select>` : x.t === "area" ? `<textarea name="${x.k}" rows="4">${esc(x.v)}</textarea>` : `<input name="${x.k}" type="${x.t || "text"}" value="${esc(x.v)}" ${x.r ? "required" : ""} ${x.t === "number" ? 'step="any" min="0"' : ""}>`}</div>`).join("") + `<p class="msg" id="de" hidden></p><div class="act"><button type="button" class="btn ghost" id="dx">Batal</button><button class="btn">${label || "Simpan"}</button></div>`;
+      $("#dx").onclick = () => d.close();
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const b = f.querySelector(".act .btn:last-child"), er = $("#de"); b.disabled = true; er.hidden = true;
+        try { await ok(Object.fromEntries(new FormData(f))); d.close(); toast(msg || "Tersimpan"); await (after ? after() : refresh()); }
+        catch (x) { er.textContent = x.message; er.hidden = false; b.disabled = false; }
+      };
+      if (d.open) d.close(); d.showModal();
+    }
+    const memF = (m) => [{ k: "no_anggota", l: "Nomor anggota", v: m.no_anggota, r: 1 }, { k: "name", l: "Nama lengkap", v: m.name, r: 1 }, { k: "email", l: "Email akun login (boleh dikosongkan)", t: "email", v: m.email }, { k: "phone", l: "Telepon / WhatsApp", v: m.phone }, { k: "address", l: "Alamat", t: "area", v: m.address },
+      { k: "tipe", l: "Jenis keanggotaan", v: m.tipe || "biasa", o: [["biasa", "Anggota"], ["luar_biasa", "Anggota luar biasa (AD Pasal 7)"], ["ex_officio", "Pejabat ex-officio (bukan anggota)"]] },
+      { k: "status", l: "Status", v: m.status || "calon", o: [["calon", "Calon anggota"], ["aktif", "Aktif"], ["dibekukan", "Diberhentikan sementara"], ["keluar", "Berhenti atas permintaan sendiri"], ["diberhentikan", "Diberhentikan"], ["meninggal", "Meninggal dunia"]] },
+      { k: "status_note", l: "Alasan / catatan perubahan status (wajib bila bukan aktif)", v: "" }];
+    const memBody = (v, old) => { const b = { no_anggota: v.no_anggota.trim(), name: v.name.trim(), email: v.email.trim() || null, phone: v.phone.trim() || null, address: v.address.trim() || null, tipe: v.tipe }; if (!old || v.status !== old.status) { b.status = v.status; b.status_note = v.status_note.trim() || null; } return b; };
+    const actives = () => D.sum.filter((x) => x.status === "aktif" && x.id !== me.id).map((x) => [x.id, x.no_anggota + " · " + x.name]);
+
+    document.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-a]"); if (!b) return;
+      const id = +b.dataset.id;
+      switch (b.dataset.a) {
+        case "addmem": return ask("Tambah anggota", memF({}), (v) => api("POST", "/rest/v1/coop_members", memBody(v)));
+        case "editmem": { const [m] = await api("GET", "/rest/v1/coop_members?select=*&id=eq." + id); return ask("Ubah anggota", memF(m), (v) => api("PATCH", "/rest/v1/coop_members?id=eq." + id, memBody(v, m))); }
+        case "sav": { const ref = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(); return ask("Catat simpanan", [{ k: "m", l: "Anggota", v: "", o: actives() }, { k: "k", l: "Jenis", v: "wajib", o: [["pokok", "Pokok"], ["wajib", "Wajib"], ["sukarela", "Sukarela"]] }, { k: "d", l: "Setoran atau penarikan", v: "in", o: [["in", "Setoran"], ["out", "Penarikan (hanya sukarela)"]] }, { k: "a", l: "Jumlah (Rp)", t: "number", r: 1 }, { k: "n", l: "Catatan", v: "" }], (v) => rpc("record_saving", { p_member: +v.m, p_kind: v.k, p_amount: (v.d === "out" ? -1 : 1) * +v.a, p_note: v.n, p_ref: ref })); }
+        case "apply": return ask("Ajukan pinjaman", [{ k: "a", l: "Jumlah pinjaman (Rp)", t: "number", r: 1 }, { k: "t", l: "Jangka waktu (bulan)", t: "number", v: 12, r: 1 }, { k: "p", l: "Keperluan", t: "area", v: "" }], (v) => rpc("apply_loan", { p_amount: +v.a, p_tenor: Math.round(+v.t), p_purpose: v.p }), "Kirim pengajuan");
+        case "dec": return b.dataset.ok
+          ? ask("Setujui pinjaman", [{ k: "r", l: "Jasa per bulan (%, flat)", t: "number", v: 1, r: 1 }, { k: "n", l: "Catatan", v: "" }], (v) => rpc("decide_loan", { p_loan: id, p_approve: true, p_rate: +v.r, p_note: v.n }), "Setujui")
+          : ask("Tolak pinjaman", [{ k: "n", l: "Alasan penolakan", t: "area", v: "" }], (v) => rpc("decide_loan", { p_loan: id, p_approve: false, p_rate: 0, p_note: v.n }), "Tolak");
+        case "pay": if (!confirm("Catat angsuran ini sebagai sudah dibayar?")) return; try { await rpc("pay_installment", { p_id: id }); toast("Angsuran tercatat"); await refresh(); } catch (x) { toast(x.message); } return;
+        case "meet": return ask("Tambah rapat", [{ k: "title", l: "Judul", v: "", r: 1 }, { k: "kind", l: "Jenis", v: "rapat anggota", o: [["rapat anggota", "Rapat anggota"], ["RAT", "RAT"], ["rapat pengurus", "Rapat pengurus (tidak tampil bagi anggota)"]] }, { k: "held_at", l: "Tanggal", t: "date", v: today(), r: 1 }, { k: "place", l: "Tempat", v: "" }, { k: "agenda", l: "Agenda", t: "area", v: "" }, { k: "minutes", l: "Hasil rapat", t: "area", v: "" }], (v) => api("POST", "/rest/v1/coop_meetings", { title: v.title.trim(), kind: v.kind, held_at: v.held_at, place: v.place.trim() || null, agenda: v.agenda.trim() || null, minutes: v.minutes.trim() || null }));
+        case "note": return ask("Tulis catatan pengawas", [{ k: "title", l: "Judul", v: "", r: 1 }, { k: "level", l: "Tingkat", v: "info", o: [["info", "Informasi"], ["perhatian", "Perlu perhatian"], ["temuan", "Temuan"]] }, { k: "body", l: "Uraian", t: "area", v: "" }], (v) => api("POST", "/rest/v1/coop_notes", { title: v.title.trim(), level: v.level, body: v.body.trim() || null }));
+        case "resp": return ask("Tanggapi catatan", [{ k: "r", l: "Tanggapan pengurus", t: "area", v: "", r: 1 }], (v) => rpc("respond_note", { p_id: id, p_response: v.r }), "Kirim");
+        case "done": try { await api("PATCH", "/rest/v1/coop_notes?id=eq." + id, { status: "selesai" }); toast("Ditandai selesai"); await refresh(); } catch (x) { toast(x.message); } return;
+      }
+    });
+
+    (async () => { if (handleHash()) return; if (S) { try { await boot(); return; } catch (e) { clearS(); } } showLogin(); if (location.hash === "#daftar") $("#lreg").click(); })();
+  })();
+  </script>
+</body>
+</html>

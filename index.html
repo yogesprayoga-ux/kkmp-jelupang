@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<!--
+  KKMP JELUPANG - Website lengkap 5 halaman (Beranda, Profil, Katalog, Kemitraan, Informasi & Kontak)
+
+  STRUKTUR FOLDER (unggah ketiganya bersama, dengan susunan yang sama):
+      index.html   = kerangka halaman, data SITE (contoh/cadangan), dan JavaScript (file ini)
+      style.css    = seluruh tampilan (warna ada di bagian 1, paling atas)
+      admin.html   = panel admin (login, kelola produk, mitra, pengumuman, dokumentasi)
+      config.js    = alamat dan kunci publik Supabase
+      supabase/    = skrip SQL (01_setup, 02_seed, 03_seed_situs); tidak perlu diunggah ke hosting
+      assets/      = tempat foto dan logo milik sendiri
+
+  UBAH   : Warna di style.css (bagian 1).
+           Seluruh teks, gambar, produk, mitra, berita, dan kontak di blok "SITE" (bagian 2, di bawah).
+  GAMBAR : Kolom img / logo / mapImg menerima:
+             - file di folder assets   ->  "assets/logo.png", "assets/hero-beranda.jpg"
+             - alamat gambar publik    ->  "https://..."
+             - tautan berbagi Google Drive (otomatis dikonversi; file harus dibagikan ke "Siapa saja yang memiliki link")
+           Tersedia di: brand.logo, mapImg, hero.img, dan setiap item (nodes, tiles, people, ident, posts,
+           katalog, direktori mitra). Kosong atau gagal dimuat = kotak gambar kosong (blank).
+           Format yang dikenali untuk file lokal: png, jpg, jpeg, gif, webp, svg, avif.
+  PETA   : Buka Google Maps > cari lokasi > Bagikan > Sematkan peta > Salin HTML.
+           Tempel (boleh seluruh kode <iframe ...> atau hanya alamat src-nya) ke:
+             mapEmbed      = peta jaringan usaha mitra (Beranda & Kemitraan)
+             mapEmbedKkmp  = peta lokasi KKMP di halaman Informasi & Kontak (kosong = memakai mapEmbed)
+           Kosong = peta ilustratif (kotak kosong + pin contoh).
+  TAUTAN : Isi nama halaman (beranda, profil, katalog, kemitraan, kontak),
+           atau alamat https://..., atau "" (nonaktif).
+  DINAMIS: Isi config.js (alamat dan kunci Supabase) agar produk, mitra, pengumuman, dokumentasi, serta
+           menu, hero, profil, visi-misi, FAQ, kontak, footer, dan pin peta dibaca dari database dan dikelola lewat admin.html. config.js kosong = memakai data contoh di blok SITE.
+           Langkah lengkap ada di PANDUAN.md.
+  UJI    : Buka index.html langsung di browser, atau di VS Code gunakan ekstensi "Live Server".
+
+  Jangan ubah apa pun di bawah garis "JANGAN UBAH".
+-->
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KKMP Jelupang</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script>
+  /* ======================================================================
+     2. ISI WEBSITE (ubah teks, gambar, tautan di sini)
+     Daftar halaman: beranda, profil, katalog, kemitraan, kontak.
+     Tiap halaman = hero + blok-blok berurutan + cta. Urutan blok boleh dipindah/dihapus.
+     Item daftar = satu blok { ... }. Salin untuk menambah, hapus untuk mengurangi.
+     ====================================================================== */
+  // Unit usaha KKMP (dipakai Beranda dan Profil; diedit lewat admin > Unit usaha KKMP)
+  const UNITS = {
+    t: "units",
+    label: "Unit Usaha KKMP",
+    title: "Tujuh Unit Usaha untuk Warga dan Usaha Lokal",
+    sub: "Seluruh jenis usaha KKMP Jelupang dalam satu tempat. Ketersediaan layanan dikonfirmasi langsung kepada pengelola.",
+    items: [
+      { emoji: "🛒", short: "Sembako & Waserda", title: "Gerai Sembako / Waserda", text: "Penyediaan kebutuhan pokok dan barang sehari-hari bagi warga.", link: "katalog" },
+      { emoji: "💊", short: "Apotek", title: "Apotek Kelurahan", text: "Obat dan kebutuhan kesehatan dasar di lingkungan kelurahan.", link: "katalog" },
+      { emoji: "🌾", short: "Offtaker", title: "Penyerapan Hasil Produksi Warga (Offtaker)", text: "Menampung dan memasarkan hasil produksi warga dan usaha lokal.", link: "kemitraan" },
+      { emoji: "🧊", short: "Gudang & Cold Storage", title: "Gudang & Cold Storage", text: "Pendukung penyimpanan produk agar mutu pasokan terjaga.", link: "kontak" },
+      { emoji: "💰", short: "Simpan Pinjam", title: "Unit Simpan Pinjam", text: "Layanan simpanan dan pinjaman bagi anggota koperasi.", link: "kontak" },
+      { emoji: "🩺", short: "Klinik", title: "Klinik Kelurahan", text: "Layanan kesehatan dasar bagi warga.", link: "kontak" },
+      { emoji: "🚚", short: "Logistik & Distribusi", title: "Logistik & Distribusi Barang", text: "Pengiriman dan distribusi barang antara pemasok, KKMP, dan usaha mitra.", link: "kemitraan" }
+    ]
+  };
+
+  const SITE = {
+    // ----- Identitas situs, menu, dan footer -----
+    brand: {
+      name: "KKMP Jelupang",
+      tagline: "Koperasi Kelurahan Merah Putih, Serpong Utara, Kota Tangerang Selatan",
+      logo: "",
+      emoji: "🏠",
+      siteTitle: "KKMP Jelupang",
+      favicon: ""
+    },
+    nav: [
+      ["Beranda", "beranda"],
+      ["Profil KKMP", "profil"],
+      ["Katalog Produk", "katalog"],
+      ["Kemitraan", "kemitraan"],
+      ["Informasi & Kontak", "kontak"]
+    ],
+    footer: {
+      desc: "Koperasi kelurahan dengan tujuh unit usaha untuk melayani warga dan menguatkan jejaring usaha lokal.",
+      contact: [
+        "Jl. Contoh No. 10, Jelupang, Serpong Utara, Tangerang Selatan (contoh alamat)",
+        "0812-xxxx-xxxx (contoh)",
+        "kontak@kkmp-jelupang.id (contoh)"
+      ],
+      social: [
+        { t: "YT", link: "" },
+        { t: "IG", link: "" },
+        { t: "f", link: "" }
+      ],
+      note: "Semua hak dilindungi. Website ini berisi informasi kelembagaan dan jaringan usaha. Informasi dapat berubah."
+    },
+
+    // ----- Tombol Masuk (header kanan atas); isi akan disesuaikan -----
+    login: {
+      label: "Masuk",
+      title: "Masuk ke Akun KKMP",
+      text: "Khusus pengelola mitra dan pengurus. Masuk dengan akun yang diberikan KKMP Jelupang."
+    },
+
+    // ----- Tema: warna dan huruf (diedit lewat admin > Tema & tampilan) -----
+    theme: {
+      red: "#B84435", yel: "#F6EB60", mar: "#632B2B", off: "#FFFFFF", canvas: "#FFF9F0",
+      sand: "#F2EAE3", ink: "#272227", mut: "#6d6368", pink: "#FBE6E1", cream: "#FFF6D8",
+      font: "Poppins"
+    },
+
+    // ----- Teks antarmuka (tombol, label, pesan); diedit lewat admin > Teks antarmuka -----
+    ui: {
+      searchPh: "Cari produk lalu tekan Enter…",
+      searchAria: "Cari produk",
+      navTitle: "Navigasi",
+      contactTitle: "Kontak",
+      socialTitle: "Ikuti Kami",
+      catSearchPh: "Cari nama produk, kategori, atau kata kunci…",
+      sortLabel: "Urutkan:",
+      sortNew: "Terbaru",
+      sortAz: "Nama A–Z",
+      noProduct: "Produk tidak ditemukan. Coba kata kunci atau kategori lain.",
+      unitLabel: "Satuan:",
+      confirmLink: "ⓘ Konfirmasi Ketersediaan ➜",
+      latestLabel: "Terkini",
+      prodSample: "(contoh)",
+      prodBadge: "Konfirmasi Ketersediaan",
+      catLabel: "Kategori:",
+      prodNote: "Harga dan ketersediaan perlu dikonfirmasi langsung kepada pengelola KKMP Jelupang.",
+      modalBtn: "Hubungi Kami ➜",
+      dirContact: "Hubungi",
+      dirDetail: "Lihat Detail ➜",
+      dirNote: "Detail usaha, produk, dan kontak publik tampil setelah mitra terverifikasi dan menyetujui publikasi.",
+      noPartner: "Belum ada mitra pada kategori ini.",
+      readMore: "Baca Selengkapnya ➜",
+      videoSoon: "Video profil segera hadir",
+      videoSoonSub: "Video dari kanal YouTube KKMP Jelupang",
+      videoTitle: "Video Profil KKMP Jelupang",
+      mapTitle: "Peta Google Maps",
+      loginEmail: "Email",
+      loginPass: "Kata sandi",
+      loginSoon: "Fitur masuk akun sedang disiapkan.",
+      noLink: "Tautan belum diisi. Informasi menunggu verifikasi pengurus.",
+      detailNote: "Detail lengkap tersedia setelah informasi diverifikasi dan disetujui pengurus.",
+      detailBtn: "Informasi dan Kontak ➜",
+      copied: "Disalin:",
+      copyFail: "Tidak dapat menyalin otomatis."
+    },
+
+    // ----- Peta (dipakai Beranda, Kemitraan, dan Informasi & Kontak) -----
+    // mapImg = gambar latar | mapEmbed / mapEmbedKkmp = kode sematan Google Maps
+    // pins: x, y = persen dari kiri/atas | kind: kkmp | warung | apotek | toko
+    mapImg: "",
+    mapEmbed: "",
+    mapEmbedKkmp: "",
+    mapUrl: "https://maps.google.com",
+    pins: [
+      { x: 48, y: 22, kind: "kkmp", name: "KKMP Jelupang (Pusat Distribusi)" },
+      { x: 20, y: 52, kind: "warung", name: "Warung (contoh)", info: "Menunggu konfirmasi" },
+      { x: 38, y: 72, kind: "toko", name: "Toko (contoh)", info: "Menunggu konfirmasi" },
+      { x: 60, y: 56, kind: "apotek", name: "Apotek (contoh)", info: "Menunggu konfirmasi" },
+      { x: 76, y: 34, kind: "warung", name: "Warung (contoh)", info: "Menunggu konfirmasi" },
+      { x: 84, y: 68, kind: "toko", name: "Usaha lainnya (contoh)", info: "Menunggu konfirmasi" }
+    ],
+    mapNote: "Peta ilustratif, bukan lokasi aktual.",
+
+    // ----- Isi tiap halaman: hero + blocks + cta -----
+    // Urutan blok boleh dipindah atau dihapus. Item daftar = satu blok { ... }.
+    pages: {
+      // ===== Halaman: Beranda =====
+      beranda: {
+        hero: {
+          label: "Pusat Distribusi, Jaringan Usaha Lokal",
+          h1: "Menghubungkan Pasokan,",
+          accent: "Menguatkan Usaha Lokal.",
+          text: "Tujuh unit usaha KKMP, dari gerai sembako hingga layanan simpan pinjam dan klinik, memudahkan warga dan pelaku usaha Jelupang.",
+          b1: ["Lihat Katalog Produk", "katalog"],
+          b2: ["Temukan Mitra Usaha", "kemitraan"],
+          img: "",
+          emoji: "📦",
+          quote: "Usaha Lokal Tumbuh Bersama Warga Jelupang"
+        },
+        blocks: [
+          { t: "ustrip" },
+          {
+            t: "nodes",
+            label: "Peran KKMP Jelupang",
+            title: "Menghubungkan pasokan dengan jaringan usaha lokal.",
+            text: "KKMP Jelupang berperan sebagai pusat distribusi yang mendukung usaha lokal dan memudahkan warga memperoleh informasi kebutuhan.",
+            btn: ["Kenali KKMP", "profil"],
+            pill: "Saling Terhubung, Saling Menguatkan",
+            items: [
+              {
+                title: "Pemasok",
+                sub: "Sumber pasokan borong",
+                emoji: "📦",
+                img: "",
+                desc: "Pemasok menyediakan barang sesuai kesepakatan pengadaan."
+              },
+              {
+                title: "KKMP Jelupang",
+                sub: "Pusat distribusi dan pengelolaan pasokan",
+                emoji: "🏪",
+                img: "",
+                desc: "KKMP mengoordinasikan rencana distribusi dan informasi pasokan."
+              },
+              {
+                title: "Usaha Mitra",
+                sub: "Warung, apotek, toko, dan usaha lokal",
+                emoji: "🛍️",
+                img: "",
+                desc: "Usaha lokal menyalurkan produk sesuai jenis usahanya."
+              },
+              {
+                title: "Masyarakat",
+                sub: "Akses kebutuhan lebih mudah",
+                emoji: "👨‍👩‍👧",
+                img: "",
+                desc: "Warga memperoleh informasi usaha dan kebutuhan yang relevan."
+              }
+            ]
+          },
+          {
+            t: "tiles",
+            cls: "alt sq",
+            label: "Kategori Produk Unggulan",
+            title: "Kebutuhan Sehari-hari untuk Usaha dan Warga",
+            more: ["Lihat Semua Kategori ➜", "katalog"],
+            items: [
+              { title: "Sembako", sub: "Beras, minyak, gula, dll", emoji: "🍚", img: "", link: "katalog" },
+              { title: "Rumah Tangga", sub: "Perlengkapan rumah", emoji: "🧴", img: "", link: "katalog" },
+              { title: "Kesehatan", sub: "Obat dan kebutuhan kesehatan", emoji: "💊", img: "", link: "katalog" },
+              { title: "Makanan & Minuman", sub: "Produk konsumsi harian", emoji: "🍪", img: "", link: "katalog" },
+              { title: "Lainnya", sub: "Produk sesuai kerja sama", emoji: "📦", img: "", link: "katalog" }
+            ]
+          },
+          {
+            t: "map",
+            label: "Jaringan Usaha Mitra",
+            title: "Usaha Lokal, Lebih Dekat dengan Anda",
+            text: "Temukan berbagai usaha mitra KKMP Jelupang di wilayah Serpong Utara dan sekitarnya.",
+            btn: ["Lihat Peta Mitra", "kemitraan"],
+            side: {
+              emoji: "🏪",
+              title: "Warung, apotek, toko, dan usaha lainnya.",
+              text: "Bersama membangun ekosistem usaha lokal yang lebih kuat.",
+              btn: ["Lihat Daftar Mitra ➜", "kemitraan"]
+            }
+          },
+          {
+            t: "posts",
+            label: "Informasi Terbaru",
+            title: "Pengumuman dan Kegiatan",
+            limit: 3,
+            more: ["Lihat Semua Informasi ➜", "kontak"],
+            items: [
+              {
+                date: "12 Jan 2025",
+                title: "Kegiatan Sosialisasi Kemitraan Usaha Lokal",
+                emoji: "📣",
+                img: "",
+                link: "kontak"
+              },
+              {
+                date: "8 Jan 2025",
+                title: "Informasi Ketersediaan Pasokan Produk",
+                emoji: "📦",
+                img: "",
+                link: "kontak"
+              },
+              {
+                date: "5 Jan 2025",
+                title: "Pelatihan Pengelolaan Usaha untuk Mitra",
+                emoji: "🎓",
+                img: "",
+                link: "kontak"
+              }
+            ]
+          }
+        ],
+        cta: {
+          emoji: "🤝",
+          title: "Ingin menjadi bagian dari kemitraan KKMP Jelupang?",
+          text: "Mari bersama memperkuat usaha lokal dan memenuhi kebutuhan masyarakat.",
+          btn: ["Hubungi Kami ➜", "kontak"]
+        }
+      },
+
+      // ===== Halaman: Profil KKMP =====
+      profil: {
+        hero: {
+          red: 1,
+          label: "Tentang Koperasi",
+          h1: "Mengenal",
+          accent: "KKMP Jelupang",
+          text: "Koperasi yang menghubungkan pasokan dengan jaringan usaha lokal, untuk memperkuat ekonomi warga Jelupang dan sekitarnya.",
+          b1: ["Lihat Katalog Produk", "katalog"],
+          b2: ["Hubungi Kami", "kontak"],
+          img: "",
+          emoji: "🏢",
+          cap: [
+            "Foto contoh ilustratif",
+            "Lokasi dan bangunan dapat disesuaikan dengan dokumentasi resmi."
+          ]
+        },
+        blocks: [
+          {
+            t: "split",
+            title: "Peran KKMP dalam Ekosistem Lokal",
+            text: "KKMP Jelupang berperan sebagai pusat distribusi dan layanan yang menghubungkan pasokan dengan jaringan usaha lokal melalui tujuh unit usaha. Kami tidak menggantikan warung, toko, apotek, dan usaha lain yang sudah ada, melainkan mendukung melalui kerja sama distribusi dan penyediaan informasi.",
+            items: [
+              {
+                emoji: "🚚",
+                title: "Menghubungkan Pasokan",
+                text: "Menjembatani ketersediaan barang dengan kebutuhan usaha lokal."
+              },
+              {
+                emoji: "🏪",
+                title: "Menguatkan Usaha Lokal",
+                text: "Mendukung warung, apotek, toko, dan usaha lainnya melalui jaringan distribusi."
+              },
+              {
+                emoji: "👥",
+                title: "Memudahkan Warga",
+                text: "Akses informasi kebutuhan sehari-hari melalui usaha mitra di sekitar Jelupang."
+              }
+            ]
+          },
+          { t: "units" },
+          {
+            t: "cards",
+            title: "Nilai dan Prinsip Kerja",
+            items: [
+              { emoji: "🛡️", title: "Terpercaya", text: "Informasi jelas, akurat, dan dapat dipertanggungjawabkan." },
+              { emoji: "🤝", title: "Kolaboratif", text: "Bekerja sama dengan usaha lokal dan pihak terkait." },
+              {
+                emoji: "👨‍👩‍👧",
+                title: "Berorientasi Warga",
+                text: "Mengedepankan manfaat bagi masyarakat Jelupang dan sekitarnya."
+              },
+              { emoji: "🌱", title: "Berkelanjutan", text: "Mendukung pertumbuhan ekonomi lokal dalam jangka panjang." }
+            ]
+          },
+          {
+            t: "ident",
+            title: "Identitas Kelembagaan",
+            video: "",
+            emoji: "🏢",
+            rows: [
+              ["📄", "Nama", "Koperasi Kelurahan Merah Putih (KKMP) Jelupang."],
+              [
+                "📍",
+                "Wilayah",
+                "Kelurahan Jelupang, Kecamatan Serpong Utara, Kota Tangerang Selatan."
+              ],
+              ["🏛️", "Dasar Pembentukan", "(Diisi sesuai dokumen resmi)"],
+              ["📅", "Tanggal", "(Diisi sesuai dokumen resmi)"]
+            ]
+},
+          {
+            t: "people",
+            title: "Pengurus (Jika Tersedia)",
+            items: [
+              { name: "Nama Pengurus", sub: "Ketua (contoh ilustratif)", emoji: "👩", img: "" },
+              { name: "Nama Pengurus", sub: "Wakil Ketua (contoh ilustratif)", emoji: "👨", img: "" },
+              { name: "Nama Pengurus", sub: "Sekretaris (contoh ilustratif)", emoji: "🧑", img: "" },
+              { name: "Nama Pengurus", sub: "Bendahara (contoh ilustratif)", emoji: "👩‍💼", img: "" }
+            ]
+          },
+          {
+            t: "tiles",
+            src: "gallery",
+            limit: 3,
+            title: "Dokumentasi Kegiatan",
+            more: ["Lihat Semua Dokumentasi ➜", "kontak"],
+            items: [
+              { emoji: "📦", img: "", title: "", sub: "" },
+              { emoji: "🎓", img: "", title: "", sub: "" },
+              { emoji: "🤝", img: "", title: "", sub: "" }
+            ]
+          }
+        ],
+        cta: {
+          emoji: "👥",
+          title: "Bersama Menguatkan Jelupang",
+          text: "Mari berkolaborasi untuk mendukung usaha lokal dan kesejahteraan masyarakat.",
+          btn: ["Hubungi Kami ➜", "kontak"]
+        }
+      },
+
+      // ===== Halaman: Katalog Produk =====
+      katalog: {
+        hero: {
+          label: "Informasi Pasokan",
+          h1: "Katalog Produk",
+          accent: "KKMP Jelupang",
+          text: "Berbagai kebutuhan untuk mendukung usaha lokal dan memenuhi kebutuhan masyarakat.",
+          b1: ["Hubungi Kami", "kontak"],
+          b2: ["Lihat Jaringan Mitra", "kemitraan"],
+          img: "",
+          emoji: "🛒",
+          quote: "Pasokan Berkualitas untuk Usaha Lokal dan Masyarakat"
+        },
+        blocks: [
+          {
+            t: "strip",
+            items: [
+              { emoji: "📦", title: "Produk Terpilih", sub: "Informasi produk yang telah dikonfirmasi", link: "" },
+              {
+                emoji: "🏷️",
+                title: "Mendukung Usaha Lokal",
+                sub: "Memudahkan akses untuk warung, toko, apotek, dan lainnya",
+                link: ""
+              },
+              { emoji: "👥", title: "Kebutuhan Masyarakat", sub: "Memudahkan akses informasi kebutuhan", link: "" },
+              { emoji: "🔔", title: "Informasi Terbaru", sub: "Data dapat diperbarui secara berkala", link: "" }
+            ]
+          },
+          {
+            t: "catalog",
+            title: "Kategori Produk",
+            cats: [
+              "Semua Produk",
+              "Sembako",
+              "Bahan Makanan",
+              "Rumah Tangga",
+              "Kesehatan",
+              "Minuman & Makanan Ringan",
+              "Lainnya"
+            ],
+            note: "Menampilkan contoh produk. Ketersediaan harus dikonfirmasi.",
+            items: [
+              {
+                n: "Beras",
+                c: "Sembako",
+                u: "per kg",
+                d: "Beras kualitas baik untuk kebutuhan sehari-hari.",
+                e: "🍚",
+                img: ""
+              },
+              {
+                n: "Minyak Goreng",
+                c: "Sembako",
+                u: "per liter",
+                d: "Minyak goreng kemasan untuk kebutuhan rumah tangga.",
+                e: "🛢️",
+                img: ""
+              },
+              {
+                n: "Gula Pasir",
+                c: "Sembako",
+                u: "per kg",
+                d: "Gula pasir untuk kebutuhan dapur dan usaha.",
+                e: "🧂",
+                img: ""
+              },
+              {
+                n: "Tepung Terigu",
+                c: "Bahan Makanan",
+                u: "per kg",
+                d: "Tepung terigu serbaguna untuk berbagai olahan.",
+                e: "🌾",
+                img: ""
+              },
+              { n: "Telur Ayam", c: "Bahan Makanan", u: "per kg", d: "Telur ayam segar.", e: "🥚", img: "" },
+              {
+                n: "Mie Instan",
+                c: "Minuman & Makanan Ringan",
+                u: "per pcs",
+                d: "Mie instan berbagai varian.",
+                e: "🍜",
+                img: ""
+              },
+              {
+                n: "Sabun Mandi",
+                c: "Rumah Tangga",
+                u: "per pcs",
+                d: "Sabun mandi untuk kebutuhan rumah tangga.",
+                e: "🧼",
+                img: ""
+              },
+              { n: "Vitamin", c: "Kesehatan", u: "per pcs", d: "Vitamin dan suplemen kesehatan.", e: "💊", img: "" }
+            ],
+            info: {
+              title: "Informasi Penting",
+              text: "Produk, harga, satuan, dan ketersediaan perlu dikonfirmasi langsung kepada pengelola KKMP Jelupang. Data pada halaman ini dapat diperbarui secara berkala.",
+              upd: "Pembaruan terakhir: 12 Januari 2025 (contoh)"
+            }
+          }
+        ],
+        cta: {
+          emoji: "🤝",
+          title: "Bersama Mendukung Usaha Lokal",
+          text: "Pasokan lebih terhubung, usaha lokal lebih kuat, masyarakat lebih mudah.",
+          btn: ["Hubungi Kami ➜", "kontak"]
+        }
+      },
+
+      // ===== Halaman: Kemitraan =====
+      kemitraan: {
+        hero: {
+          red: 1,
+          label: "Kemitraan dan Jaringan Usaha",
+          h1: "Bersama",
+          accent: "Menguatkan Usaha Lokal.",
+          text: "KKMP Jelupang membangun jaringan kemitraan dengan berbagai usaha lokal untuk memperlancar distribusi pasokan dan memudahkan masyarakat memenuhi kebutuhan sehari-hari.",
+          b1: ["Lihat Peta Mitra", "kemitraan"],
+          b2: ["Peluang Kemitraan", "kontak"],
+          img: "",
+          emoji: "🤝",
+          quote: "Usaha Lokal Tumbuh Bersama Warga Jelupang"
+        },
+        blocks: [
+          {
+            t: "strip",
+            items: [
+              {
+                emoji: "🤝",
+                title: "Kemitraan yang Saling Menguntungkan",
+                sub: "KKMP dan usaha mitra berkembang bersama.",
+                link: ""
+              },
+              { emoji: "🚚", title: "Pasokan Lebih Terjamin", sub: "Mendukung kelancaran kebutuhan usaha.", link: "" },
+              {
+                emoji: "👥",
+                title: "Akses Lebih Mudah untuk Masyarakat",
+                sub: "Warga lebih mudah menemukan usaha dan kebutuhan.",
+                link: ""
+              },
+              {
+                emoji: "📈",
+                title: "Menguatkan Ekonomi Lokal",
+                sub: "Mendorong pertumbuhan usaha di wilayah Jelupang.",
+                link: ""
+              }
+            ]
+          },
+          {
+            t: "map",
+            label: "Peta Jaringan Usaha Mitra",
+            title: "Peta Jaringan Usaha Mitra",
+            text: "Temukan lokasi usaha mitra KKMP Jelupang di peta. Peta ini menampilkan contoh distribusi lokasi usaha lokal di wilayah Serpong Utara dan sekitarnya.",
+            btn: ["Lihat di Google Maps", "https://maps.google.com"],
+            legend: ["Usaha Mitra", "KKMP Jelupang", "Wilayah Jelupang (dengan batas indikatif)"],
+            legnote: "Lokasi usaha mitra yang ditampilkan hanya yang telah diverifikasi dan mendapat izin publikasi."
+          },
+          {
+            t: "dir",
+            title: "Direktori Usaha Mitra",
+            sub: "Temukan berbagai usaha lokal yang menjadi bagian dari jaringan kemitraan KKMP Jelupang.",
+            more: ["Lihat Semua Mitra ➜", "kemitraan"],
+            cats: ["Semua", "Sembako & Waserda", "Apotek", "Offtaker (Hasil Produksi Warga)", "Gudang & Cold Storage", "Simpan Pinjam", "Klinik", "Logistik & Distribusi", "Lainnya"],
+            items: [
+              {
+                n: "Warung Sari Rasa",
+                c: "Sembako & Waserda",
+                a: "Jl. Jelupang Raya No. 12, Jelupang, Serpong Utara",
+                e: "🏪",
+                img: ""
+              },
+              {
+                n: "Apotek Sehat Jelupang",
+                c: "Apotek",
+                a: "Jl. Puspita Raya No. 8, Jelupang, Serpong Utara",
+                e: "💊",
+                img: ""
+              },
+              {
+                n: "Toko Maju Bersama",
+                c: "Sembako & Waserda",
+                a: "Jl. Anggrek II No. 5, Jelupang, Serpong Utara",
+                e: "🛍️",
+                img: ""
+              },
+              {
+                n: "Kedai Bu Siti",
+                c: "Offtaker (Hasil Produksi Warga)",
+                a: "Jl. Cendana No. 3, Jelupang, Serpong Utara",
+                e: "🍜",
+                img: ""
+              }
+            ],
+            note: "Nama dan alamat di atas adalah contoh ilustrasi; tampil resmi setelah mitra terverifikasi dan menyetujui publikasi.",
+            side: {
+              emoji: "👥",
+              title: "Ingin Menjadi Mitra KKMP?",
+              text: "Kami terbuka untuk bekerja sama dengan berbagai usaha lokal di wilayah Jelupang.",
+              list: ["Informasi peluang kemitraan", "Proses komunikasi", "Persyaratan (jika ada)"],
+              btn: ["Hubungi Kami ➜", "kontak"]
+            }
+          }
+        ],
+        cta: {
+          emoji: "🤝",
+          title: "Mari Bersama Menguatkan Usaha Lokal",
+          text: "Dengan kemitraan yang sehat dan berkelanjutan, kita dapat membangun ekonomi warga Jelupang yang lebih kuat.",
+          btn: ["Bahas Peluang Kemitraan ➜", "kontak"]
+        }
+      },
+
+      // ===== Halaman: Informasi & Kontak =====
+      kontak: {
+        hero: {
+          label: "Pusat Informasi",
+          h1: "Informasi Terbaru dan Kontak",
+          accent: "KKMP Jelupang",
+          text: "Dapatkan informasi resmi, kegiatan terbaru, serta hubungi kami untuk pertanyaan, saran, atau kerja sama.",
+          b1: ["Lihat Pengumuman", "kontak"],
+          b2: ["Hubungi Kami", "kontak"],
+          img: "",
+          emoji: "💬",
+          quote: "Terbuka, Mudah Dihubungi, Siap Berkolaborasi untuk Jelupang"
+        },
+        blocks: [
+          {
+            t: "posts",
+            big: 1,
+            limit: 3,
+            title: "Pengumuman Terbaru",
+            more: ["Lihat Semua Pengumuman ➜", "kontak"],
+            items: [
+              {
+                tag: "Pengumuman",
+                date: "12 Jan 2025",
+                title: "Penyesuaian Jadwal Layanan KKMP Jelupang",
+                text: "Informasi mengenai penyesuaian jadwal layanan pada minggu ini.",
+                emoji: "📅",
+                img: "",
+                link: ""
+              },
+              {
+                tag: "Kegiatan",
+                date: "8 Jan 2025",
+                title: "Sosialisasi Kemitraan Usaha Lokal",
+                text: "Dokumentasi kegiatan sosialisasi kemitraan bersama pelaku usaha di Jelupang.",
+                emoji: "🎓",
+                img: "",
+                link: ""
+              },
+              {
+                tag: "Informasi",
+                date: "5 Jan 2025",
+                title: "Pembaruan Katalog Produk",
+                text: "Daftar produk telah diperbarui. Ketersediaan tetap perlu dikonfirmasi kepada pengelola.",
+                emoji: "📦",
+                img: "",
+                link: "katalog"
+              }
+            ]
+          },
+          {
+            t: "tiles",
+            cls: "alt",
+            src: "gallery",
+            limit: 4,
+            title: "Dokumentasi Kegiatan",
+            more: ["Lihat Semua Dokumentasi ➜", ""],
+            items: [
+              { title: "Distribusi Produk", sub: "10 Jan 2025", emoji: "📦", img: "" },
+              { title: "Sosialisasi Kemitraan", sub: "8 Jan 2025", emoji: "🎓", img: "" },
+              { title: "Kunjungan Usaha Mitra", sub: "5 Jan 2025", emoji: "🏪", img: "" },
+              { title: "Penataan Gudang", sub: "26 Des 2024", emoji: "🗂️", img: "" }
+            ],
+            side: {
+              emoji: "🖼️",
+              title: "Galeri Lengkap",
+              text: "Lihat lebih banyak dokumentasi kegiatan KKMP Jelupang.",
+              btn: ["Buka Galeri ➜", ""]
+            }
+          },
+          {
+            t: "faqc",
+            faqTitle: "Pertanyaan Umum (FAQ)",
+            faq: [
+              [
+                "Apa itu KKMP Jelupang?",
+                "Koperasi Kelurahan Merah Putih Jelupang, dipersiapkan sebagai pusat distribusi dan layanan warga dengan tujuh unit usaha: gerai sembako/waserda, apotek kelurahan, penyerapan hasil produksi warga (offtaker), gudang & cold storage, unit simpan pinjam, klinik kelurahan, serta logistik dan distribusi barang."
+              ],
+              [
+                "Bagaimana cara mengetahui ketersediaan produk?",
+                "Lihat Katalog Produk, lalu konfirmasi ketersediaan langsung kepada pengelola KKMP."
+              ],
+              [
+                "Siapa yang dapat menjadi mitra?",
+                "Pelaku usaha lokal seperti warung, toko, apotek, dan usaha lainnya dapat menjajaki kemitraan."
+              ],
+              [
+                "Bagaimana cara menghubungi KKMP?",
+                "Gunakan kontak resmi pada bagian Hubungi Kami setelah informasi diverifikasi."
+              ],
+              [
+                "Di mana lokasi KKMP Jelupang?",
+                "Kelurahan Jelupang, Serpong Utara, Kota Tangerang Selatan. Alamat lengkap menunggu verifikasi."
+              ]
+            ],
+            ctitle: "Hubungi Kami",
+            contact: [
+              {
+                emoji: "📍",
+                title: "Alamat",
+                lines: [
+                  "Jl. Contoh No. 10, Jelupang",
+                  "Serpong Utara, Tangerang Selatan",
+                  "(Contoh alamat – perlu verifikasi)"
+                ]
+              },
+              { emoji: "📞", title: "Telepon / WhatsApp", lines: ["0812-xxxx-xxxx", "(Contoh nomor)"] },
+              { emoji: "✉️", title: "Email", lines: ["kontak@kkmp-jelupang.id", "(Contoh email)"] },
+              {
+                emoji: "🕗",
+                title: "Jam Layanan",
+                lines: ["Senin – Jumat", "08.00 – 16.00 WIB", "(Contoh jam operasional)"]
+              }
+            ],
+            btn: ["Buka di Google Maps ➜", "https://maps.google.com"]
+          }
+        ],
+        cta: {
+          emoji: "🤝",
+          title: "Punya Pertanyaan atau Ingin Bekerja Sama?",
+          text: "Kami siap mendukung warga dan usaha lokal di Jelupang.",
+          btn: ["Hubungi Kami ➜", "kontak"]
+        }
+      }
+    }
+  };
+  </script>
+</head>
+
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="logo" id="logo" href="#/beranda" data-pg="beranda"></a>
+      <nav class="menu" id="menu" aria-label="Navigasi utama"></nav>
+      <button class="sbtn" id="sbtn" aria-label="Cari produk">🔍</button>
+      <button class="lgn" id="lgbtn" type="button">Masuk</button>
+      <button class="burger" id="burger" aria-label="Buka menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="sbox" id="sbox">
+        <input id="sin" placeholder="Cari produk lalu tekan Enter…" aria-label="Cari produk" autocomplete="off">
+        <div class="sug" id="sug"></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <div class="ov" id="ov" aria-hidden="true">
+    <div class="mod" role="dialog" aria-modal="true" id="mod"></div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <button class="top" id="top" aria-label="Ke atas">↑</button>
+
+  <footer>
+    <div class="wrap">
+      <div class="fg" id="fg"></div>
+      <div class="copy" id="copy"></div>
+    </div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script>
+  /* ===================== JANGAN UBAH di bawah garis ini ===================== */
+
+  const S = SITE;
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const PG = ["beranda", "profil", "katalog", "kemitraan", "kontak"];
+
+  // ----- Helper: alamat gambar, escape HTML, gambar, dan tautan -----
+  const imgSrc = (u) => {
+    u = String(u == null ? "" : u).trim();
+    if (!u) return "";
+    // Tautan berbagi Google Drive otomatis diubah menjadi alamat gambar langsung
+    const m =
+      u.match(/drive\.google\.com\/file\/d\/([\w-]+)/) ||
+      u.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([\w-]+)/);
+    if (m) return "https://lh3.googleusercontent.com/d/" + m[1];
+    // alamat publik, data:image, atau file lokal (mis. assets/logo.png)
+  const local = /^(\.{0,2}\/)?[\w\-./%]+\.(png|jpe?g|gif|webp|svg|avif)$/i;
+  return /^(https?:)?\/\/|^data:image\//i.test(u) || local.test(u) ? u : "";
+  };
+
+  const esc = (t) =>
+    String(t == null ? "" : t).replace(
+      /[&<>"]/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]
+    );
+
+  // <img> hanya dibuat jika alamat valid; jika gagal dimuat, <img> dihapus (kotak kosong tetap tampil)
+  const imgTag = (src) =>
+    imgSrc(src)
+      ? `<img src="${esc(imgSrc(src))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+      : "";
+
+  // pic = gambar dengan emoji cadangan | bpic = kotak gambar kosong (tanpa ikon)
+  const pic = (src, em, cls = "") =>
+    `<div class="pic ${cls}"><span class="em">${em || ""}</span>${imgTag(src)}</div>`;
+  const bpic = (src, cls = "") => `<div class="pic blank ${cls}">${imgTag(src)}</div>`;
+
+  // l = nama halaman | alamat https://... | "" (nonaktif)
+  const lk = (l) =>
+    !l
+      ? 'href="#" data-none'
+      : PG.includes(l)
+        ? `href="#/${l}" data-pg="${l}"`
+        : /^\s*(javascript|data|vbscript):/i.test(l)
+          ? 'href="#" data-none'
+          : `href="${esc(l)}" target="_top" rel="noopener"`;
+
+  const btn = (b, c) => (b ? `<a class="btn ${c}" ${lk(b[1])}>${esc(b[0])}</a>` : "");
+  const more = (m) => (m ? `<a class="more" ${lk(m[1])}>${esc(m[0])}</a>` : "");
+
+  const head = (b) =>
+    b.title
+      ? `<div class="row">
+          <div>
+            ${b.label ? `<div class="lab">${esc(b.label)}</div>` : ""}
+            <h2>${esc(b.title)}</h2>
+            ${b.sub ? `<p class="nt" style="margin-top:4px">${esc(b.sub)}</p>` : ""}
+          </div>
+          ${more(b.more)}
+        </div>`
+      : "";
+
+  // ambil ID video dari tautan YouTube (watch, youtu.be, embed, shorts, live)
+  const ytId = (u) => {
+    const m = String(u || "").match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/);
+    return m ? m[1] : "";
+  };
+  const sec = (b, x) =>
+    `<section class="${b.cls || ""}">
+      <div class="wrap">
+        ${head(b)}
+        ${x}
+        ${b.note ? `<p class="nt">${esc(b.note)}</p>` : ""}
+      </div>
+    </section>`;
+
+  const txt = (b) =>
+    `<div>
+      ${b.label ? `<div class="lab">${esc(b.label)}</div>` : ""}
+      <h2>${esc(b.title)}</h2>
+      <p class="tx">${esc(b.text)}</p>
+      ${btn(b.btn, "b-red")}
+    </div>`;
+
+  const card = (c) =>
+    `<div class="c1">
+      ${c.num ? `<span class="n">${c.num}</span>` : ""}
+      ${c.emoji ? `<span class="em">${c.emoji}</span>` : ""}
+      <b${c.num ? ' style="padding-right:26px"' : ""}>${esc(c.title)}</b>
+      ${c.text ? `<small>${esc(c.text)}</small>` : ""}
+    </div>`;
+
+  // ----- Peta: sematan Google Maps, atau peta ilustratif (kotak kosong + pin) -----
+  // Hanya alamat sematan resmi Google Maps yang diterima (boleh ditempel sebagai kode <iframe> utuh)
+  const mapSrc = (v) => {
+    if (!v) return "";
+    const m = String(v).match(/src\s*=\s*["']([^"']+)["']/i);
+    const u = (m ? m[1] : String(v)).trim().replace(/&amp;/g, "&");
+    const valid =
+      /^https:\/\/(www\.)?google\.[a-z.]+\/maps\/embed/i.test(u) ||
+      /^https:\/\/maps\.google\.[a-z.]+\/maps.*output=embed/i.test(u) ||
+      /^https:\/\/(www\.)?google\.[a-z.]+\/maps.*output=embed/i.test(u);
+    return valid ? u : "";
+  };
+
+  const mapH = (pins, one) => {
+    const em = mapSrc(one ? S.mapEmbedKkmp || S.mapEmbed : S.mapEmbed);
+    if (em) {
+      return `<div class="map">
+        <iframe src="${esc(em)}" title="${esc(S.ui.mapTitle)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>`;
+    }
+    const pin = (q) =>
+      q.kind === "kkmp"
+        ? `<span class="pin k" style="left:${q.x}%;top:${q.y}%">${esc(q.name)}</span>`
+        : `<button class="pin d" data-k="${q.kind}" data-n="${esc(q.name)}" data-f="${esc(q.info || "")}" style="left:${q.x}%;top:${q.y}%" aria-label="${esc(q.name)}"><i></i></button>`;
+    return `<div class="map">
+      ${bpic(S.mapImg)}
+      ${pins.map(pin).join("")}
+      <div class="pop"></div>
+      <span style="position:absolute;left:10px;bottom:6px;font-size:10px;color:#6d6368">${esc(S.mapNote)}</span>
+    </div>`;
+  };
+
+  // ----- State halaman -----
+  let cur = "beranda";
+  let Q = "";
+  let CF = "";
+  let SORT = "new";
+  let PF = "";
+
+  // ----- Renderer tiap jenis blok (cocokkan dengan t: "..." pada data SITE) -----
+  const R = {
+    strip: (b) =>
+      `<div class="wrap quick">
+        <div class="qg">${b.items
+          .map(
+            (q) => `
+          <a class="q" ${lk(q.link)}>
+            <span class="em">${q.emoji}</span>
+            <span><b>${esc(q.title)}</b><small>${esc(q.sub)}</small></span>
+          </a>`
+          )
+          .join("")}
+        </div>
+      </div>`,
+
+    ustrip: () => {
+      const u = UNITS.items;
+      return `<div class="wrap quick"><div class="qg q7">${u
+        .map(
+          (c) => `
+          <a class="q" ${lk(c.link)} title="${esc(c.title)}">
+            <span class="em">${esc(c.emoji)}</span>
+            <b>${esc(c.short || c.title)}</b>
+          </a>`
+        )
+        .join("")}</div></div>`;
+    },
+
+    split: (b) =>
+      sec(
+        { cls: b.cls },
+        `<div class="sg">
+          ${txt(b)}
+          <div class="cd">${b.items.map(card).join("")}</div>
+        </div>`
+      ),
+
+    cards: (b) =>
+      sec(
+        b,
+        `<div class="cd${b.num ? " n" : ""}">${b.items
+          .map((c, i) => card({ ...c, num: b.num ? i + 1 : 0 }))
+          .join("")}</div>`
+      ),
+
+    nodes: (b) =>
+      sec(
+        { cls: b.cls },
+        `<div class="sg">
+          ${txt(b)}
+          <div>
+            <div class="nodes">${b.items
+              .map(
+                (n, i) =>
+                  `${i ? '<span class="arr" aria-hidden="true">⇄</span>' : ""}
+              <button class="nd${i === 1 ? " on" : ""}" data-d="${esc(n.desc)}">
+                ${pic(n.img, n.emoji)}
+                <b>${esc(n.title)}</b>
+                <small>${esc(n.sub)}</small>
+              </button>`
+              )
+              .join("")}
+            </div>
+            <div class="link"><span>${esc(b.pill)}</span></div>
+            <p class="ncap">${esc(((b.items[1] || b.items[0]) || {}).desc)}</p>
+          </div>
+        </div>`
+      ),
+
+    tiles: (b) =>
+      sec(
+        b,
+        `<div class="tg ${b.side ? "side" : ""}">${b.items
+          .map(
+            (c) => `
+          <a class="cat" ${lk(c.link)}>
+            ${bpic(c.img)}
+            ${c.title ? `<div class="bd"><b>${esc(c.title)}</b><small>${esc(c.sub)}</small></div>` : ""}
+          </a>`
+          )
+          .join("")}
+          ${
+            b.side
+              ? `<div class="sd">
+            <span class="em">${b.side.emoji}</span>
+            <b>${esc(b.side.title)}</b>
+            <small>${esc(b.side.text)}</small>
+            ${btn(b.side.btn, "b-red")}
+          </div>`
+              : ""
+          }
+        </div>`
+      ),
+
+    units: (b) => {
+      const u = { cls: b.cls, ...UNITS };
+      return sec(
+        u,
+        `<div class="cd un">${u.items
+          .map(
+            (c) => `<a class="c1" ${lk(c.link)}>
+            <span class="em">${esc(c.emoji)}</span>
+            <b>${esc(c.title)}</b>
+            <small>${esc(c.text)}</small>
+          </a>`
+          )
+          .join("")}</div>`
+      );
+    },
+
+    ident: (b) =>
+      sec(
+        { ...b, note: "" },
+        `<div class="idg">
+          <div class="vp">${
+            ytId(b.video)
+              ? `<iframe src="https://www.youtube-nocookie.com/embed/${ytId(b.video)}" title="${esc(S.ui.videoTitle)}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
+              : `<div class="vph"><span class="em">▶️</span><b>${esc(S.ui.videoSoon)}</b><small>${esc(S.ui.videoSoonSub)}</small></div>`
+          }</div>
+          <div>${b.rows
+            .map(
+              (r) => `
+            <div class="ir">
+              <span class="em">${r[0]}</span>
+              <b>${esc(r[1])}</b>
+              <span>${esc(r[2])}</span>
+            </div>`
+            )
+            .join("")}
+          </div>
+        </div>`
+      ),
+
+    people: (b) =>
+      sec(
+        b,
+        `<div class="tg">${b.items
+          .map(
+            (p) => `
+          <div class="pp">
+            ${bpic(p.img)}
+            <b>${esc(p.name)}</b>
+            <small>${esc(p.sub)}</small>
+          </div>`
+          )
+          .join("")}
+        </div>`
+      ),
+
+    map: (b) =>
+      sec(
+        { cls: b.cls },
+        `<div class="mg">
+          ${txt(b)}
+          ${mapH(S.pins)}
+          ${
+            b.side
+              ? `<div class="card">
+            <span class="em">${b.side.emoji}</span>
+            <b>${esc(b.side.title)}</b>
+            <small>${esc(b.side.text)}</small>
+            <a class="more" ${lk(b.side.btn[1])}>${esc(b.side.btn[0])}</a>
+          </div>`
+              : `<div>
+            <div class="leg">${b.legend
+              .map((l, i) => `<span class="${["", "k", "w"][i] || ""}">${esc(l)}</span>`)
+              .join("")}</div>
+            <div class="card y" style="margin-top:10px;font-size:12px">ⓘ ${esc(b.legnote)}</div>
+          </div>`
+          }
+        </div>`.replace("b-red", "b-yel")
+      ),
+
+    posts: (b) =>
+      sec(
+        b,
+        b.big
+          ? `<div class="ps">${b.items
+              .map(
+                (p) => `
+            <a class="po" ${lk(p.link)}>
+              <div class="pic blank" style="height:112px">${imgTag(p.img)}<span class="tag r">${esc(p.tag)}</span></div>
+              <div class="bd">
+                <small>${esc(p.date)}</small>
+                <b>${esc(p.title)}</b>
+                <p>${esc(p.text)}</p>
+                <span class="go">${esc(S.ui.readMore)}</span>
+              </div>
+            </a>`
+              )
+              .join("")}
+          </div>`
+          : `<div class="tl">${b.items
+              .map(
+                (p) => `
+            <a class="nw" ${lk(p.link)}>
+              ${bpic(p.img)}
+              <span><small>${esc(p.date)}</small><b>${esc(p.title)}</b></span>
+              <i>➜</i>
+            </a>`
+              )
+              .join("")}
+          </div>`
+      ),
+
+    catalog: (b) =>
+      sec(
+        b,
+        `<div class="chips" id="cc">${b.cats
+          .map((c) => `<button class="chip${c === (CF || b.cats[0]) ? " on" : ""}" data-cf="${esc(c)}">${esc(c)}</button>`)
+          .join("")}</div>
+        <div class="tools">
+          <input class="fi" id="qi" placeholder="${esc(S.ui.catSearchPh)}" value="${esc(Q)}" aria-label="Cari produk">
+          <label style="font-size:13px;font-weight:600">${esc(S.ui.sortLabel)}</label>
+          <select class="fi" id="so">
+            <option value="new">${esc(S.ui.sortNew)}</option>
+            <option value="az">${esc(S.ui.sortAz)}</option>
+            <option value="price">${esc(TK.sortPrice)}</option>
+            <option value="ready">${esc(TK.sortReady)}</option>
+          </select>
+        </div>
+        <div class="pg" id="pg"></div>
+        <div class="info">
+          <div><b>ⓘ ${esc(b.info.title)}</b>${esc(b.info.text)}</div>
+          <div><b>${esc(S.ui.latestLabel)}</b>${esc(b.info.upd)}</div>
+        </div>`
+      ),
+
+    dir: (b) =>
+      sec(
+        b,
+        `<div class="dr">
+          <div>
+            <div class="chips" id="dc">${b.cats
+              .map((c) => `<button class="chip${c === (PF || b.cats[0]) ? " on" : ""}" data-pf="${esc(c)}">${esc(c)}</button>`)
+              .join("")}</div>
+            <div class="dp" id="dp"></div>
+          </div>
+          <div class="card y">
+            <span class="em">${b.side.emoji}</span>
+            <b>${esc(b.side.title)}</b>
+            <small>${esc(b.side.text)}</small>
+            <ul>${b.side.list.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+            ${btn(b.side.btn, "b-red")}
+          </div>
+        </div>`
+      ),
+
+    faqc: (b) =>
+      sec(
+        { cls: b.cls },
+        `<div class="fc">
+          <div>
+            <div class="row"><h2>${esc(b.faqTitle)}</h2></div>
+            ${b.faq
+              .map((q) => `<details><summary>${esc(q[0])}</summary><p>${esc(q[1])}</p></details>`)
+              .join("")}
+          </div>
+          <div>
+            <div class="row"><h2>${esc(b.ctitle)}</h2></div>
+            ${b.contact
+              .map(
+                (c) => `
+            <div class="ci">
+              <span class="em">${c.emoji}</span>
+              <div><b>${esc(c.title)}</b>${c.lines.map((l) => `<small>${esc(l)}</small>`).join("")}</div>
+            </div>`
+              )
+              .join("")}
+            ${mapH(S.pins.slice(0, 1), 1)}
+            <p style="margin-top:12px">${btn(b.btn, "b-yel")}</p>
+          </div>
+        </div>`
+      ),
+
+    // bagian tambahan buatan admin: teks + gambar / video / peta / formulir
+    custom: (b) => {
+      const e = embedSrc(b.embed);
+      const h = Math.min(1400, Math.max(0, parseInt(b.embedH, 10) || 0));
+      const frame = (extra) =>
+        `<iframe src="${esc(e.src)}" title="${esc(b.title || "Sematan")}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" ${extra}></iframe>`;
+      const media = e
+        ? e.kind === "video"
+          ? `<div class="vp">${frame('allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen')}</div>`
+          : `<div class="emb" style="height:${h || (e.kind === "form" ? 720 : 420)}px">${frame("allowfullscreen")}</div>`
+        : imgSrc(b.img)
+          ? `<figure class="cimg">${imgTag(b.img)}</figure>`
+          : "";
+      const t = `<div>
+        ${b.label ? `<div class="lab">${esc(b.label)}</div>` : ""}
+        ${b.title ? `<h2>${esc(b.title)}</h2>` : ""}
+        ${b.text ? `<p class="tx">${esc(b.text)}</p>` : ""}
+        ${btn(b.btn, "b-red")}
+      </div>`;
+      const body = !media
+        ? t
+        : b.layout === "full"
+          ? `${t}<div style="margin-top:18px">${media}</div>`
+          : `<div class="sg${b.layout === "left" ? " rev" : ""}">${t}<div>${media}</div></div>`;
+      return `<section class="cu ${b.bg === "sand" ? "sand" : ""}"><div class="wrap">${body}</div></section>`;
+    }
+  };
+
+  // ----- Sematan (embed): hanya sumber tepercaya yang diterima -----
+  const embedSrc = (v) => {
+    v = String(v || "").trim();
+    if (!v) return null;
+    const m = v.match(/src\s*=\s*["']([^"']+)["']/i);
+    const u = (m ? m[1] : v).trim().replace(/&amp;/g, "&");
+    const y = ytId(u);
+    if (y) return { src: "https://www.youtube-nocookie.com/embed/" + y, kind: "video" };
+    const mp = mapSrc(u);
+    if (mp) return { src: mp, kind: "map" };
+    const vm = u.match(/^https:\/\/(?:www\.)?vimeo\.com\/(?:video\/)?(\d+)/i) || u.match(/^https:\/\/player\.vimeo\.com\/video\/(\d+)/i);
+    if (vm) return { src: "https://player.vimeo.com/video/" + vm[1], kind: "video" };
+    if (/^https:\/\/docs\.google\.com\/forms\/d\/e\/[\w-]+\/viewform/i.test(u))
+      return { src: /embedded=true/.test(u) ? u : u + (u.includes("?") ? "&" : "?") + "embedded=true", kind: "form" };
+    return null;
+  };
+
+  // Urutan dan visibilitas blok: p.order (dari database) menentukan blok yang tampil; p.custom = bagian tambahan
+  function layoutBlocks(p) {
+    let L = p.blocks;
+    if (Array.isArray(p.order) && p.order.length) {
+      const by = {};
+      p.blocks.forEach((b) => (by[b.t] = b));
+      L = p.order.map((t) => by[t]).filter(Boolean);
+    }
+    const cs = (Array.isArray(p.custom) ? p.custom : [])
+      .filter((c) => c && (c.title || c.text || c.img || c.embed))
+      .map((c) => ({ ...c, t: "custom" }));
+    const known = new Set(L.map((b) => b.t));
+    const out = cs.filter((c) => !c.after);
+    L.forEach((b) => {
+      out.push(b);
+      cs.filter((c) => c.after === b.t).forEach((c) => out.push(c));
+    });
+    cs.filter((c) => c.after && !known.has(c.after)).forEach((c) => out.push(c));
+    return out;
+  }
+
+  // Warna, huruf, judul tab, dan ikon tab dari database
+  function applyTheme() {
+    const t = S.theme || {}, r = document.documentElement.style;
+    ["red", "yel", "mar", "off", "canvas", "sand", "ink", "mut", "pink", "cream"].forEach((k) => {
+      if (/^#[0-9a-f]{3,8}$/i.test(t[k] || "")) r.setProperty("--" + k, t[k]);
+    });
+    const f = String(t.font || "").trim();
+    if (f && f !== "Poppins" && /^[\w ]+$/.test(f)) {
+      const l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(f).replace(/%20/g, "+") + ":wght@400;500;600;700;800&display=swap";
+      document.head.appendChild(l);
+      document.body.style.fontFamily = `"${f}",Poppins,'Segoe UI',Arial,sans-serif`;
+    }
+    document.title = S.brand.siteTitle || S.brand.name || document.title;
+    const fav = imgSrc(S.brand.favicon);
+    const href = fav || "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${S.brand.emoji || "🏠"}</text></svg>`);
+    let ic = document.querySelector("link[rel~=icon]");
+    if (!ic) {
+      ic = document.createElement("link");
+      ic.rel = "icon";
+      document.head.appendChild(ic);
+    }
+    ic.href = href;
+  }
+
+  // ----- Hero, grid produk, grid mitra, dan pergantian halaman -----
+  function hero(h) {
+    const red = h.red === 1 || h.red === "1" || h.red === true;
+    // h.hub (opsional) = diagram lingkaran; bila tidak ada, dipakai gambar + kutipan
+    const vis = h.hub
+      ? `<div class="hub">
+          <svg viewBox="0 0 100 77" preserveAspectRatio="none">
+            <g stroke="#F6EB60" stroke-width=".7" stroke-dasharray="2 2">
+              <line x1="50" y1="22" x2="18" y2="58"/>
+              <line x1="50" y1="22" x2="50" y2="62"/>
+              <line x1="50" y1="22" x2="82" y2="58"/>
+            </g>
+          </svg>
+          <i class="c" style="left:50%;top:26%"><s>🏢</s>${esc(h.hub[0])}</i>
+          ${h.hub
+            .slice(1)
+            .map((n, k) => `<i style="left:${[18, 50, 82][k]}%;top:${[74, 82, 74][k]}%">${esc(n)}</i>`)
+            .join("")}
+        </div>`
+      : `<div class="hpic">
+          ${bpic(h.img)}
+          <div class="blob"><span>${esc(h.quote || "")}</span></div>
+          ${h.cap ? `<div class="cap"><b>${esc(h.cap[0])}</b>${esc(h.cap[1])}</div>` : ""}
+        </div>`;
+
+    return `<div class="hero ${red ? "red" : ""}">
+      <div class="wrap hgrid">
+        <div>
+          <div class="lab">${esc(h.label)}</div>
+          <h1>${esc(h.h1)} <span class="hl">${esc(h.accent)}</span></h1>
+          <p>${esc(h.text)}</p>
+          <div class="hcta">${btn(h.b1, red ? "b-yel" : "b-red")}${btn(h.b2, red ? "b-out" : "b-yel")}</div>
+        </div>
+        ${vis}
+      </div>
+    </div>`;
+  }
+
+  function prodGrid() {
+    const b = S.pages.katalog.blocks.find((x) => x.t === "catalog");
+    let a = b.items.filter(
+      (p) =>
+        (!CF || CF === b.cats[0] || p.c === CF) &&
+        (p.n + " " + p.c + " " + p.d + " " + (p.store || "")).toLowerCase().includes(Q.toLowerCase())
+    );
+    if (SORT === "az") a = [...a].sort((x, y) => x.n.localeCompare(y.n));
+    if (SORT === "price") a = [...a].sort((x, y) => (x.price == null ? 1e15 : x.price) - (y.price == null ? 1e15 : y.price));
+    if (SORT === "ready") a = [...a].sort((x, y) => (y.price != null && y.stock > 0) - (x.price != null && x.stock > 0));
+    return a.length
+      ? a
+          .map(
+            (p) => `
+        <div class="pd${p.price != null && p.stock <= 0 ? " out" : ""}" data-pn="${esc(p.k || p.n)}" tabindex="0">
+          ${bpic(p.img)}
+          <div class="bd">
+            <span class="tag" style="position:static;display:inline-block;margin-bottom:6px">${esc(p.c)}</span><br>
+            <b>${esc(p.n)}</b>
+            <small>${esc(S.ui.unitLabel)} ${esc(p.u)}<br>${esc(p.d)}${p.store ? `<br>${esc(TK.at)} <b style="font-weight:600">${esc(p.store)}</b>` : ""}</small>
+            ${p.price != null ? `<div class="pr"><span class="rp">${rpf(p.price)}</span>${stk(p)}</div>` : ""}
+            <a class="go" ${lk("kontak")}>${esc(S.ui.confirmLink)}</a>
+          </div>
+        </div>`
+          )
+          .join("")
+      : `<p class="nt">${esc(S.ui.noProduct)}</p>`;
+  }
+
+  function dirGrid() {
+    const b = S.pages.kemitraan.blocks.find((x) => x.t === "dir");
+    return (
+      b.items
+        .filter((p) => !PF || PF === b.cats[0] || p.c === PF)
+        .map(
+          (p) => `
+        <div class="dc" data-dn="${esc(p.n)}">
+          ${bpic(p.img)}
+          <div class="bd">
+            <span class="tag" style="position:static;display:inline-block;margin-bottom:5px">${esc(p.c)}</span>
+            <b>${esc(p.n)}</b>
+            <small>${esc(p.a)}</small>
+            <a class="more" style="font-size:12px" ${lk("kontak")}>${esc(S.ui.dirContact)}</a>
+            <button class="dt">${esc(S.ui.dirDetail)}</button>
+            <p class="ex">${esc(S.ui.dirNote)}</p>
+          </div>
+        </div>`
+        )
+        .join("") || `<p class="nt">${esc(S.ui.noPartner)}</p>`
+    );
+  }
+
+  function show(id) {
+    cur = PG.includes(id) ? id : "beranda";
+    const p = S.pages[cur];
+    const app = $("#app");
+
+    // ulangi animasi masuk halaman
+    app.style.animation = "none";
+    void app.offsetWidth;
+    app.style.animation = "";
+
+    const cta = !p.cta || (!p.cta.title && !p.cta.text) ? "" : `<div class="cta">
+      <div class="wrap cg">
+        <span class="em">${p.cta.emoji}</span>
+        <div style="flex:1;min-width:220px"><h2>${esc(p.cta.title)}</h2><p>${esc(p.cta.text)}</p></div>
+        ${btn(p.cta.btn, "b-yel")}
+      </div>
+    </div>`;
+    app.innerHTML = hero(p.hero) + layoutBlocks(p).map((b) => R[b.t](b)).join("") + cta;
+
+    // selang-seling latar section (kecuali yang sudah .sand)
+    $$("#app section").forEach((x, i) => {
+      if (!x.classList.contains("sand")) x.classList.toggle("alt", i % 2 === 1);
+    });
+    if ($("#pg")) {
+      $("#pg").innerHTML = prodGrid();
+      $("#so").value = SORT;
+    }
+    if ($("#dp")) $("#dp").innerHTML = dirGrid();
+
+    $$("#menu a").forEach((a) => a.classList.toggle("on", a.dataset.pg === cur));
+    $("#menu").classList.remove("open");
+    $("#burger").setAttribute("aria-expanded", "false");
+    try {
+      history.replaceState(null, "", "#/" + cur);
+    } catch (e) {}
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    enhance();
+  }
+
+  // ----- Header & footer (dipanggil ulang setelah data database dimuat) -----
+  function renderChrome() {
+    $("#logo").innerHTML =
+      bpic(S.brand.logo) +
+      `<span><b>${esc(S.brand.name)}</b><small>${esc(S.brand.tagline)}</small></span>`;
+    $("#menu").innerHTML = S.nav.map((n) => `<a ${lk(n[1])}>${esc(n[0])}</a>`).join("");
+    $("#lgbtn").textContent = (S.login && S.login.label) || "Masuk";
+    $("#sin").placeholder = S.ui.searchPh;
+    $("#sin").setAttribute("aria-label", S.ui.searchAria);
+    $("#sbtn").setAttribute("aria-label", S.ui.searchAria);
+
+    const f = S.footer;
+    $("#fg").innerHTML = `
+      <div>
+        <div class="logo" style="color:#fff">
+          ${bpic(S.brand.logo)}
+          <span>
+            <b style="color:#fff">${esc(S.brand.name)}</b>
+            <small style="color:#cdbfb6">${esc(S.brand.tagline)}</small>
+          </span>
+        </div>
+        <p style="margin-top:10px">${esc(f.desc)}</p>
+      </div>
+      <div>
+        <h4>${esc(S.ui.navTitle)}</h4>
+        <div class="c2">${S.nav.map((n) => `<a ${lk(n[1])}>${esc(n[0])}</a>`).join("")}</div>
+      </div>
+      <div>
+        <h4>${esc(S.ui.contactTitle)}</h4>
+        ${f.contact.map((x) => `<p class="cp" title="Klik untuk menyalin" style="padding:2px 0">${esc(x)}</p>`).join("")}
+      </div>
+      <div>
+        <h4>${esc(S.ui.socialTitle)}</h4>
+        <div class="soc">${f.social.map((s) => `<a ${lk(s.link)} aria-label="${esc(s.t)}">${esc(s.t)}</a>`).join("")}</div>
+      </div>`;
+
+    $("#copy").textContent = `© ${new Date().getFullYear()} ${S.brand.name}. ${f.note}`;
+  }
+  // ----- Interaksi -----
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (a) {
+      if (a.hasAttribute("data-pg")) {
+        e.preventDefault();
+        show(a.dataset.pg);
+        return;
+      }
+      if (a.hasAttribute("data-none")) {
+        e.preventDefault();
+        const cd = a.closest(".po,.nw,.cat");
+        if (cd && cd.querySelector("b")) detail(cd);
+        else toast(S.ui.noLink);
+        return;
+      }
+    }
+    const nd = e.target.closest(".nd");
+    if (nd) {
+      const w = nd.closest(".nodes");
+      $$(".nd", w).forEach((x) => x.classList.toggle("on", x === nd));
+      nd.closest(".sg").querySelector(".ncap").textContent = nd.dataset.d;
+      return;
+    }
+    const pin = e.target.closest(".pin[data-n]"), m = e.target.closest(".map");
+    if (m) {
+      const po = m.querySelector(".pop");
+      if (!po) return;
+      $$(".pin", m).forEach((x) => x.classList.remove("on"));
+      if (pin) {
+        pin.classList.add("on");
+        po.innerHTML = `<b>${esc(pin.dataset.n)}</b><small>${esc(pin.dataset.f)}</small>`;
+        po.style.left = pin.style.left;
+        po.style.top = pin.style.top;
+        po.classList.add("on");
+      } else po.classList.remove("on");
+      return;
+    }
+    const cf = e.target.closest("[data-cf]");
+    if (cf) {
+      CF = cf.dataset.cf;
+      $$("#cc .chip").forEach((x) => x.classList.toggle("on", x === cf));
+      $("#pg").innerHTML = prodGrid();
+      return;
+    }
+    const pf = e.target.closest("[data-pf]");
+    if (pf) {
+      PF = pf.dataset.pf;
+      $$("#dc .chip").forEach((x) => x.classList.toggle("on", x === pf));
+      $("#dp").innerHTML = dirGrid();
+      syncPins();
+      return;
+    }
+    const dt = e.target.closest(".dt");
+    if (dt) {
+      partnerModal(dt.closest(".dc").dataset.dn);
+      return;
+    }
+    const pd = e.target.closest(".pd[data-pn]");
+    if (pd) {
+      prodModal(pd.dataset.pn);
+      return;
+    }
+    const cp = e.target.closest(".cp");
+    if (cp) {
+      copy(cp.textContent);
+      return;
+    }
+    if (e.target.closest("#ov") && (e.target.id === "ov" || e.target.closest(".x"))) closeMod();
+    if (!e.target.closest(".nav")) $("#menu").classList.remove("open");
+  });
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "qi") {
+      Q = e.target.value;
+      $("#pg").innerHTML = prodGrid();
+    }
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.id === "so") {
+      SORT = e.target.value;
+      $("#pg").innerHTML = prodGrid();
+    }
+  });
+  $("#burger").onclick = () => {
+    const o = $("#menu").classList.toggle("open");
+    $("#burger").setAttribute("aria-expanded", o);
+  };
+  $("#sbtn").onclick = () => {
+    $("#sbox").classList.toggle("open");
+    $("#sin").focus();
+  };
+  $("#sin").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      Q = e.target.value.trim();
+      CF = "";
+      $("#sbox").classList.remove("open");
+      show("katalog");
+    }
+  });
+  // ----- Interaktivitas tambahan (tampilan tidak berubah) -----
+  const RM = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  let tt, auto, io;
+  function toast(m) {
+    const t = $("#toast");
+    t.textContent = m;
+    t.classList.add("show");
+    clearTimeout(tt);
+    tt = setTimeout(() => t.classList.remove("show"), 2400);
+  }
+  function copy(t) {
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(S.ui.copied + " " + t)).catch(() => toast(S.ui.copyFail));
+  }
+  let lastF;
+  function openMod(h) {
+    lastF = document.activeElement;
+    $("#mod").innerHTML = `<button class="x" aria-label="Tutup">✕</button>` + h;
+    $("#ov").classList.add("show");
+    $("#ov").setAttribute("aria-hidden", "false");
+    $("#mod .x").focus();
+  }
+  function closeMod() {
+    $("#ov").classList.remove("show");
+    $("#ov").setAttribute("aria-hidden", "true");
+    lastF && lastF.focus && lastF.focus();
+  }
+  // foto di jendela detail: ukuran mengikuti foto asli (tidak dipotong)
+  const mpic = (src, done) => {
+    const u = done ? src : imgSrc(src);
+    return u
+      ? `<div class="mpic"><img src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('blank');this.remove()"></div>`
+      : `<div class="mpic blank"></div>`;
+  };
+  function partnerModal(n) {
+    const b = S.pages.kemitraan.blocks.find((x) => x.t === "dir");
+    const p = b.items.find((x) => x.n === n);
+    if (!p) return;
+    openMod(`${mpic(p.img)}
+      <span class="st">${esc(p.c)}</span>
+      <h3>${esc(p.n)}</h3>
+      ${p.a ? `<p>📍 ${esc(p.a)}</p>` : ""}
+      <p>${esc(S.ui.dirNote)}</p>
+      <a class="btn b-red" ${lk("kontak")} onclick="closeMod()">${esc(S.ui.modalBtn)}</a>`);
+  }
+  function prodModal(n) {
+    const b = S.pages.katalog.blocks.find((x) => x.t === "catalog");
+    const p = b.items.find((x) => (x.k || x.n) === n);
+    if (!p) return;
+    $("#sbox").classList.remove("open");
+    openMod(`${mpic(p.img)}
+      <h3>${esc(p.n)} ${S.ui.prodSample && p.price == null ? `<small style="font-weight:500;color:var(--mut)">${esc(S.ui.prodSample)}</small>` : ""}</h3>
+      ${p.price != null ? `<div class="pr"><span class="rp">${rpf(p.price)}</span>${stk(p)}</div>` : `<span class="st">${esc(S.ui.prodBadge)}</span>`}
+      <p><b>${esc(S.ui.catLabel)}</b> ${esc(p.c)}<br>${p.store ? `<b>${esc(TK.at)}</b> ${esc(p.store)}<br>` : ""}<b>${esc(S.ui.unitLabel)}</b> ${esc(p.u)}<br>${esc(p.d)}</p>
+      <p>${esc(p.price != null ? TK.note : S.ui.prodNote)}</p>
+      <a class="btn b-red" ${lk("kontak")} onclick="closeMod()">${esc(S.ui.modalBtn)}</a>`);
+  }
+  function detail(c) {
+    const t = c.querySelector("b");
+    const sm = c.querySelector("small");
+    const p = c.querySelector("p");
+    const im = c.querySelector(".pic img");
+    openMod(`${mpic(im ? im.getAttribute("src") : "", true)}
+      <h3>${esc(t.textContent)}</h3>
+      ${sm ? `<p>${esc(sm.textContent)}</p>` : ""}
+      ${p ? `<p>${esc(p.textContent)}</p>` : ""}
+      <p>${esc(S.ui.detailNote)}</p>
+      <a class="btn b-red" ${lk("kontak")} onclick="closeMod()">${esc(S.ui.detailBtn)}</a>`);
+  }
+  // ----- Masuk: arahkan ke portal sesuai peran (admin / pengelola mitra) -----
+  const SK = "kkmp_session";
+  const getSess = () => { try { return JSON.parse(localStorage.getItem(SK)); } catch (e) { return null; } };
+  async function authCall(path, body) {
+    const r = await fetch(`${BASE}/auth/v1/${path}`, { method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(r.status === 400 ? "Email atau kata sandi salah." : "Gagal masuk. Coba lagi.");
+    const d = await r.json();
+    const s = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), email: (d.user && d.user.email) || "" };
+    localStorage.setItem(SK, JSON.stringify(s));
+    return s;
+  }
+  async function myAccess(s) {
+    if (s.expires_at - 60 < Date.now() / 1000) s = await authCall("token?grant_type=refresh_token", { refresh_token: s.refresh_token });
+    const r = await fetch(`${BASE}/rest/v1/rpc/my_access`, { method: "POST", headers: { apikey: KEY, Authorization: "Bearer " + s.access_token, "Content-Type": "application/json" }, body: "{}" });
+    if (!r.ok) throw new Error("Belum dapat memeriksa hak akses.");
+    return r.json();
+  }
+  function showPortals(a, email) {
+    const c = [];
+    if (a.admin) c.push(["Kelola website", "admin.html"]);
+    if (a.coop) c.push(["Portal koperasi (" + a.coop.peran + ")", "anggota.html"]);
+    (a.stores || []).forEach((s) => c.push(["Kasir & stok: " + s.name, "mitra.html?toko=" + s.id]));
+    if (!c.length) c.push(["Daftar / cek status keanggotaan koperasi", "anggota.html"]);
+    openMod(`<h3>Portal Anda</h3><p>${esc(email)}</p>
+      ${c.length ? c.map(([t, h]) => `<a class="btn b-red" href="${h}" style="display:block;margin:8px 0;text-align:center">${esc(t)} ➜</a>`).join("") : "<p>Akun ini belum memiliki akses portal. Hubungi pengurus KKMP.</p>"}
+      <p style="margin-top:14px"><a href="#" id="lgout">Keluar dari akun</a></p>`);
+  }
+  async function openLogin() {
+    const L = S.login || {};
+    $("#sbox").classList.remove("open");
+    const s = getSess();
+    if (s) { try { return showPortals(await myAccess(s), s.email); } catch (e) { localStorage.removeItem(SK); } }
+    openMod(`<h3>${esc(L.title || "Masuk")}</h3>
+      <p>${esc(L.text || "")}</p>
+      <form class="lgf" id="lgform" autocomplete="on">
+        <label for="lgem">${esc(S.ui.loginEmail)}</label>
+        <input class="fi" id="lgem" type="email" required autocomplete="username">
+        <label for="lgpw">${esc(S.ui.loginPass)}</label>
+        <input class="fi" id="lgpw" type="password" required autocomplete="current-password">
+        <p id="lgerr" role="alert" style="color:#b3261e;margin:6px 0"></p>
+        <button class="btn b-red" type="submit">${esc(L.label || "Masuk")}</button>
+      </form>
+      <p style="margin-top:12px;font-size:.9em">Belum punya akun? <a href="anggota.html#daftar">Daftar sebagai anggota koperasi</a></p>`);
+    $("#lgem").focus();
+  }
+  $("#lgbtn").onclick = openLogin;
+  document.addEventListener("click", (e) => {
+    if (e.target.id !== "lgout") return;
+    e.preventDefault();
+    localStorage.removeItem(SK);
+    closeMod();
+  });
+  document.addEventListener("submit", async (e) => {
+    if (e.target.id !== "lgform") return;
+    e.preventDefault();
+    const btn = e.target.querySelector("button"), err = $("#lgerr");
+    btn.disabled = true; err.textContent = "";
+    try {
+      if (!BASE || !KEY) throw new Error("Layanan masuk belum dikonfigurasi.");
+      const s = await authCall("token?grant_type=password", { email: $("#lgem").value.trim(), password: $("#lgpw").value });
+      const a = await myAccess(s);
+      const c = (a.stores || []).length + (a.admin ? 1 : 0) + (a.coop ? 1 : 0);
+      if (c === 1) return void (location.href = a.admin ? "admin.html" : a.coop ? "anggota.html" : "mitra.html?toko=" + a.stores[0].id);
+      showPortals(a, s.email);
+    } catch (er) { err.textContent = er.message; btn.disabled = false; }
+  });
+  function syncPins() {
+    const m = { Warung: "warung", Toko: "toko", Apotek: "apotek" };
+    $$(".pin[data-k]").forEach((x) => x.classList.toggle("dim", !!m[PF] && x.dataset.k !== m[PF]));
+  }
+  function enhance() {
+    clearInterval(auto);
+    if (io) io.disconnect();
+    const nd = $$(".nd");
+    if (nd.length && !RM) {
+      let i = 1;
+      auto = setInterval(() => {
+        i = (i + 1) % nd.length;
+        nd[i].click();
+      }, 4200);
+      $(".nodes") && $(".nodes").addEventListener("pointerdown", () => clearInterval(auto), { once: true });
+    }
+    if (!RM && "IntersectionObserver" in window) {
+      io = new IntersectionObserver((en) => en.forEach((x) => {
+        if (x.isIntersecting) {
+          const t = x.target;
+          t.classList.add("in");
+          io.unobserve(t);
+          setTimeout(() => t.classList.remove("rv", "in"), 750);
+        }
+      }), { threshold: 0.1 });
+      $$("#app .row,#app .c1,#app .cat,#app .pd,#app .po,#app .nw,#app .dc,#app .pp,#app .ci,#app details,#app .map,#app .nodes,#app .card,#app .qg,#app .idg,#app .vm").forEach((el) => {
+        el.classList.add("rv");
+        io.observe(el);
+      });
+    }
+    syncPins();
+  }
+  $("#sin").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase(), b = S.pages.katalog.blocks.find((x) => x.t === "catalog");
+    $("#sug").innerHTML = q ? b.items.filter((p) => (p.n + " " + p.c).toLowerCase().includes(q)).slice(0, 5).map((p) => `<button data-sp="${esc(p.n)}">${p.e || ""} ${esc(p.n)} <small style="color:var(--mut)">· ${esc(p.c)}</small></button>`).join("") : "";
+  });
+  $("#sug").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-sp]");
+    if (b) {
+      prodModal(b.dataset.sp);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeMod();
+      $("#sbox").classList.remove("open");
+    }
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".pd[data-pn]")) {
+      e.preventDefault();
+      prodModal(e.target.dataset.pn);
+    }
+  });
+  document.addEventListener("toggle", (e) => {
+    if (e.target.tagName === "DETAILS" && e.target.open) $$("details").forEach((d) => {
+      if (d !== e.target) d.open = false;
+    });
+  }, true);
+  addEventListener("scroll", () => {
+    const y = scrollY || document.documentElement.scrollTop;
+    $("header").classList.toggle("sc", y > 8);
+    $("#top").classList.toggle("show", y > 500);
+  }, { passive: true });
+  $("#top").onclick = () => scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" });
+  addEventListener("hashchange", () => {
+    const h = (location.hash.match(/#\/(\w+)/) || [])[1];
+    if (h && h !== cur) show(h);
+  });
+  if (!RM) {
+    let r;
+    document.addEventListener("pointermove", (e) => {
+      const h = e.target.closest && e.target.closest(".hero .hpic");
+      if (h) {
+        const b = h.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - 0.5, y = (e.clientY - b.top) / b.height - 0.5;
+        const p = h.querySelector(".pic");
+        p.style.transform = `scale(1.05) translate(${-x * 14}px,${-y * 10}px)`;
+        p.style.transition = "transform .15s";
+      }
+      const c = e.target.closest && e.target.closest(".pd,.po,.cat,.dc,.c1");
+      if (c && e.pointerType === "mouse") {
+        const b = c.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - 0.5, y = (e.clientY - b.top) / b.height - 0.5;
+        c.style.transition = "transform .12s";
+        c.style.transform = `translateY(-4px) perspective(700px) rotateX(${-y * 5}deg) rotateY(${x * 5}deg)`;
+      }
+    });
+    document.addEventListener("pointerout", (e) => {
+      const c = e.target.closest && e.target.closest(".pd,.po,.cat,.dc,.c1");
+      if (c) {
+        c.style.transform = "";
+        c.style.transition = "";
+      }
+      const h = e.target.closest && e.target.closest(".hero .hpic");
+      if (h && !(e.relatedTarget && h.contains(e.relatedTarget))) {
+        const p = h.querySelector(".pic");
+        p.style.transform = "";
+      }
+    });
+  }
+  // ----- Data dinamis dari Supabase (opsional) -----
+  // Jika config.js valid, produk, mitra, pengumuman, dan dokumentasi dibaca dari database
+  // dan dikelola lewat admin.html. Jika kosong, tidak valid, atau gagal dimuat, data contoh dipakai.
+  const CFG = window.KKMP_CONFIG || {};
+  const BASE = String(CFG.SUPABASE_URL || "").replace(/\/+$/, "");
+  const KEY = String(CFG.SUPABASE_ANON_KEY || "").trim();
+  const validProjectUrl = (value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname) &&
+        url.pathname === "/" && !url.search && !url.hash;
+    } catch {
+      return false;
+    }
+  };
+  const validPublicKey =
+    /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(KEY) || /^sb_publishable_[\w-]+$/.test(KEY);
+  const REMOTE = validProjectUrl(BASE) && validPublicKey;
+  const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const BULAN_PANJANG = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+  // "2025-01-12" -> "12 Jan 2025"
+  const fmtDate = (v) => {
+    const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${+m[3]} ${BULAN[+m[2] - 1]} ${m[1]}` : "";
+  };
+  // timestamp -> "12 Januari 2025"
+  const fmtLong = (v) => {
+    const d = new Date(v);
+    return isNaN(d) ? "" : `${d.getDate()} ${BULAN_PANJANG[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  async function sbGet(table, query) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const res = await fetch(`${BASE}/rest/v1/${table}?${query}`, {
+        // kunci lama (anon, berformat JWT "eyJ...") dikirim juga sebagai Bearer; kunci baru (sb_publishable_...) cukup lewat apikey
+        headers: /^eyJ/.test(KEY)
+          ? { apikey: KEY, Authorization: "Bearer " + KEY }
+          : { apikey: KEY },
+        signal: ctl.signal
+      });
+      if (!res.ok) throw new Error(table + " " + res.status);
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Daftar kategori: urutan dari SITE dulu, kategori baru dari database ditambahkan di belakang
+  const mergeCats = (first, known, used) => [
+    first,
+    ...known.filter((c) => c !== first),
+    ...[...new Set(used)].filter((c) => c && !known.includes(c))
+  ];
+  const newest = (rows) => rows.map((r) => r.updated_at || r.created_at || "").sort().pop();
+
+  // Menimpa bagian SITE dengan isi tabel site_content (dikelola di admin.html > Teks & Pengaturan).
+  // Hanya kolom yang diizinkan yang diterapkan; kolom lain pada data SITE tidak tersentuh.
+  const pickKeys = (v, keys) =>
+    Object.fromEntries(keys.filter((k) => v && typeof v === "object" && k in v).map((k) => [k, v[k]]));
+
+  function applySite(rows) {
+    const doc = {};
+    (rows || []).forEach((r) => (doc[r.key] = r.value || {}));
+    const put = (target, v, keys) => Object.assign(target, pickKeys(v, keys));
+
+    if (doc.menu && Array.isArray(doc.menu.nav)) S.nav = doc.menu.nav;
+    put(S.brand, doc.brand, ["name", "tagline", "logo", "emoji", "siteTitle", "favicon"]);
+    put(S.theme, doc.theme, Object.keys(S.theme));
+    put(S.ui, doc.ui, Object.keys(S.ui));
+    put(S.footer, doc.footer, ["desc", "contact", "social", "note"]);
+    put(S, doc.peta, ["mapImg", "mapEmbed", "mapEmbedKkmp", "mapNote"]);
+    if (doc.pins && Array.isArray(doc.pins.pins)) S.pins = doc.pins.pins;
+
+    Object.keys(S.pages).forEach((p) =>
+      put(S.pages[p].hero, doc["hero_" + p], ["label", "h1", "accent", "text", "b1", "b2", "img", "quote", "cap", "red"])
+    );
+
+    // Isi blok tiap halaman, kotak ajakan (CTA), urutan blok, dan bagian tambahan
+    const BLOCK_KEYS = ["label", "title", "sub", "text", "btn", "pill", "more", "side", "legend", "legnote", "note", "cats", "info", "limit"];
+    Object.keys(S.pages).forEach((p) => {
+      const pg = S.pages[p], d = doc["page_" + p] || {}, bd = d.blocks || {};
+      if (d.cta && typeof d.cta === "object") put(pg.cta, d.cta, ["emoji", "title", "text", "btn"]);
+      if (Array.isArray(d.order)) pg.order = d.order.filter((x) => typeof x === "string" && x);
+      if (Array.isArray(d.custom)) pg.custom = d.custom;
+      pg.blocks.forEach((b) => {
+        const v = bd[b.t];
+        if (!v || typeof v !== "object") return;
+        const keys = BLOCK_KEYS.slice();
+        // produk, mitra, pengumuman, dan dokumentasi dikelola lewat tabelnya sendiri
+        if (!["catalog", "dir", "posts"].includes(b.t) && b.src !== "gallery") keys.push("items");
+        put(b, v, keys);
+        if ("side" in v && v.side && !v.side.title && !v.side.text) b.side = null;
+        if (b.t === "catalog" && v.info && v.info.upd) b.info.updFixed = true;
+      });
+    });
+    S.pages.profil.blocks.forEach((b) => put(b, (doc.profil || {})[b.t], ["label", "title", "text", "items", "rows", "note", "img", "video"]));
+    S.pages.kontak.blocks
+      .filter((b) => b.t === "faqc")
+      .forEach((b) => put(b, doc.kontak, ["faqTitle", "faq", "ctitle", "contact", "btn"]));
+    put(S.login, doc.login, ["label", "title", "text"]);
+    put(UNITS, doc.units, ["label", "title", "sub", "items"]);
+  }
+
+  // ----- Harga & stok dari aplikasi kasir toko mitra (view catalog_toko) -----
+  const TK = { at: "Dijual di:", ok: "Tersedia", lo: "Stok menipis", zero: "Habis", sortPrice: "Harga terendah", sortReady: "Tersedia dulu", note: "Harga dan stok diperbarui langsung oleh toko mitra dan dapat berubah sewaktu-waktu. Hubungi toko untuk memastikan sebelum datang." };
+  const rpf = (n) => "Rp" + Math.round(+n || 0).toLocaleString("id-ID");
+  const stk = (p) => {
+    const q = (+p.stock).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + (p.u ? " " + p.u.replace(/^per\s+/i, "") : "");
+    return p.stock <= 0 ? `<span class="sk zero">${TK.zero}</span>` : p.stock <= p.min ? `<span class="sk lo">${TK.lo} · sisa ${esc(q)}</span>` : `<span class="sk ok">${TK.ok} · ${esc(q)}</span>`;
+  };
+
+  async function loadRemote() {
+    if (!REMOTE) return false;
+    try {
+      const on = "is_active=eq.true";
+      const [prod, mitra, post, gal, site, toko] = await Promise.all([
+        sbGet("products", `select=*&${on}&order=sort_order.asc,name.asc`),
+        sbGet("partners", `select=*&${on}&order=sort_order.asc,name.asc`),
+        sbGet("posts", `select=*&${on}&order=published_at.desc,id.desc&limit=50`),
+        sbGet("gallery", `select=*&${on}&order=event_date.desc,id.desc&limit=50`),
+        // teks & pengaturan situs: jika tabel belum ada, bagian ini dilewati (data SITE dipakai)
+        sbGet("site_content", "select=key,value").catch(() => []),
+        // katalog dari stok toko (jika 06_katalog_publik.sql belum dijalankan: dilewati, katalog lama dipakai)
+        sbGet("catalog_toko", "select=*&order=name.asc&limit=1000").catch(() => [])
+      ]);
+      applySite(site);
+
+      Object.values(S.pages)
+        .flatMap((p) => p.blocks)
+        .forEach((b) => {
+          if (b.t === "catalog") {
+            const src = toko.length ? toko : prod;
+            b.items = toko.length
+              ? toko.map((r) => ({ k: "t" + r.id, n: r.name, c: r.category, u: r.unit || "", d: r.description || "", img: r.image_url || "", price: +r.sell_price, stock: +r.stock, min: +r.min_stock, store: r.store_name }))
+              : prod.map((r) => ({ n: r.name, c: r.category, u: r.unit || "", d: r.description || "", img: r.image_url || "" }));
+            if (toko.length) b.note = "Harga dan stok berasal dari toko mitra KKMP Jelupang dan diperbarui langsung oleh pengelola toko.";
+            b.cats = mergeCats(b.cats[0] || "Semua Produk", b.cats, src.map((r) => r.category));
+            const last = fmtLong(newest(src));
+            if (last && !b.info.updFixed) b.info.upd = "Pembaruan terakhir: " + last;
+          } else if (b.t === "dir") {
+            b.items = mitra.map((r) => ({ n: r.name, c: r.category, a: r.address || "", img: r.image_url || "" }));
+            b.cats = mergeCats(b.cats[0] || "Semua", b.cats, mitra.map((r) => r.category));
+          } else if (b.t === "posts") {
+            const n = b.limit || 3;
+            b.items = post.slice(0, n).map((r) => ({
+              tag: r.tag || "Informasi",
+              date: fmtDate(r.published_at),
+              title: r.title,
+              text: r.text || "",
+              img: r.image_url || "",
+              link: r.link || ""
+            }));
+          } else if (b.t === "tiles" && b.src === "gallery") {
+            const n = b.limit || 3;
+            b.items = gal.slice(0, n).map((r) => ({ title: r.title, sub: fmtDate(r.event_date), img: r.image_url || "" }));
+          }
+        });
+      return true;
+    } catch (e) {
+      console.warn("Data dinamis gagal dimuat, memakai data contoh.", e);
+      return false;
+    }
+  }
+
+  // ----- Mulai -----
+  const start = () => {
+    applyTheme();
+    renderChrome();
+    show((location.hash.match(/#\/(\w+)/) || [])[1] || "beranda");
+  };
+  if (REMOTE) {
+    $("#app").innerHTML = '<div class="wrap"><p class="nt" style="padding:90px 0;text-align:center">Memuat data…</p></div>';
+    loadRemote().then(start, start);
+  } else {
+    start();
+  }
+  </script>
+</body>
+</html>
